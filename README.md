@@ -38,6 +38,12 @@ claude plugin marketplace add /path/to/agentic-skills
 | **pocock-core** | `grill-with-docs` `to-spec` `to-tickets` `triage` `teach` `writing-great-skills` `research` `wayfinder` (+3 deps) | Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) |
 | **toolbox** | `commit` `AskUserQuestion` + 4 short commands | Standalone helpers; `commit` enforces Conventional Commits and bans AI attribution trailers |
 
+The TRIP skills stop and ask at their decision points via the **native** `AskUserQuestion` tool,
+so nothing extra is needed on Claude Code. `toolbox`'s `AskUserQuestion` skill is a shim for
+agents that lack that tool (Codex CLI, OpenCode, Mistral Vibe), where the instruction would
+otherwise be silently ignored and the skill would run straight past a question it was meant to
+stop on. `trip` does not depend on it.
+
 ---
 
 ## The TRIP workflow

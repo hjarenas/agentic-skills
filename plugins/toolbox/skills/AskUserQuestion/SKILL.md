@@ -5,6 +5,15 @@ description: Emulates the AskUserQuestion tool for agents that lack native suppo
 
 # AskUserQuestion Emulation
 
+> **You do not need this on Claude Code.** `AskUserQuestion` is a native tool there, and the TRIP
+> skills that say "use the `AskUserQuestion` tool" get the real one — structured options, rendered
+> by the client. This skill exists only for agents that lack it (Codex CLI, OpenCode, Mistral
+> Vibe), where the same instruction would otherwise be ignored and the skill would barrel past a
+> decision point that was meant to stop and ask.
+>
+> That is also why it sits in `toolbox` rather than in `trip`: it is an agent-compatibility shim,
+> not a part of the workflow. `trip` does not depend on it.
+
 When a skill says **"use the `AskUserQuestion` tool"**, present the question as structured markdown and **wait for the user to reply** before proceeding.
 
 ## Format
