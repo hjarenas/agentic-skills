@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "codex-bridge",
+  "displayName": "Codex Bridge",
+  "version": "1.0.0",
+  "description": "Prompt-driven Codex delegation: plan review, code review, implementation and second opinions, with TRIP verdict tags.",
+  "author": {
+    "name": "hjarenas",
+    "url": "https://github.com/hjarenas"
+  },
+  "repository": "https://github.com/hjarenas/agentic-skills",
+  "license": "MIT",
+  "keywords": ["codex", "review", "delegation", "plan-review"],
+  "dependencies": [
+    { "name": "codex", "marketplace": "openai-codex" }
+  ]
+}

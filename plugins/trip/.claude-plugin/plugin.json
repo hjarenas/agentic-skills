@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "trip",
+  "displayName": "TRIP Workflow",
+  "version": "1.0.0",
+  "description": "Plan / Implement / Review / Test workflow with versioned docs, changelog and release ceremony.",
+  "author": {
+    "name": "hjarenas",
+    "url": "https://github.com/hjarenas"
+  },
+  "repository": "https://github.com/hjarenas/agentic-skills",
+  "license": "MIT",
+  "keywords": ["workflow", "planning", "code-review", "release", "changelog"],
+  "dependencies": ["trip-wiki"]
+}

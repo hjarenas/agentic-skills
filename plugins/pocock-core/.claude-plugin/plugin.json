@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "pocock-core",
+  "displayName": "Pocock Core (vendored)",
+  "version": "1.0.0",
+  "description": "A vendored subset of Matt Pocock's engineering skills: grilling, specs, tickets, triage, research, teaching and wayfinding.",
+  "author": {
+    "name": "hjarenas",
+    "url": "https://github.com/hjarenas"
+  },
+  "repository": "https://github.com/hjarenas/agentic-skills",
+  "homepage": "https://github.com/mattpocock/skills",
+  "license": "MIT",
+  "keywords": ["planning", "specs", "tickets", "triage", "teaching", "vendored"]
+}

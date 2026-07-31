@@ -1,0 +1,39 @@
+pocock-core
+===========
+
+The skills under `skills/` are vendored — copied, and in places modified — from:
+
+    https://github.com/mattpocock/skills
+    Copyright (c) 2026 Matt Pocock
+    MIT License (see LICENSE in this directory)
+
+They are NOT maintained by Matt Pocock in this form. Bugs you hit here may be
+ours, not his. The upstream project is the canonical source; if you want the
+complete, always-current set as the author ships it, install his plugin instead:
+
+    /plugin install mattpocock-skills
+
+(It is in Claude Code's official marketplace. Installing both gives you every
+skill twice, so pick one.)
+
+Which skills are vendored, from which upstream paths, and at which commit is
+recorded in `UPSTREAM.json`. To pull in upstream changes while keeping local
+edits, run:
+
+    scripts/vendor-sync.py --check     # see what moved upstream
+    scripts/vendor-sync.py             # 3-way merge it in
+
+Eight skills were chosen deliberately:
+
+    grill-with-docs, to-spec, to-tickets, triage,
+    teach, writing-great-skills, research, wayfinder
+
+Three more are vendored because the eight do not work without them:
+
+    grilling                  grill-with-docs runs a /grilling session
+    domain-modeling           grill-with-docs uses the /domain-modeling skill
+    setup-matt-pocock-skills  to-spec, to-tickets, triage and wayfinder all
+                              require the issue-tracker and triage-label
+                              configuration it writes
+
+Run `/setup-matt-pocock-skills` once per repository before using the others.

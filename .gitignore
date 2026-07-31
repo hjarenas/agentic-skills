@@ -1,0 +1,12 @@
+# Codex bridge run artifacts — per-target review/report text, kept out of git
+.codex-bridge/
+
+# code-review-graph local index
+.code-review-graph/graph.db
+
+# vendor-sync working clone
+.vendor-cache/
+
+# Python bytecode
+__pycache__/
+*.pyc

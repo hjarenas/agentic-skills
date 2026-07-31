@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "toolbox",
+  "displayName": "Toolbox",
+  "version": "1.0.0",
+  "description": "Small standalone helpers: Conventional Commits with no AI attribution, plus short-form exploration and debugging commands.",
+  "author": {
+    "name": "hjarenas",
+    "url": "https://github.com/hjarenas"
+  },
+  "repository": "https://github.com/hjarenas/agentic-skills",
+  "license": "MIT",
+  "keywords": ["git", "conventional-commits", "debugging", "exploration"]
+}

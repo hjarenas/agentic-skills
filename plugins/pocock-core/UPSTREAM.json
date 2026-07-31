@@ -1,0 +1,260 @@
+{
+  "upstream": {
+    "repo": "https://github.com/mattpocock/skills",
+    "ref": "main",
+    "commit": "2ab958093e83e0ec752e6c1c5932da465bf23e0c",
+    "commit_date": "2026-07-28T10:18:17+01:00",
+    "license": "MIT"
+  },
+  "vendored_at": "2026-07-31",
+  "skills": [
+    {
+      "name": "domain-modeling",
+      "upstream_dir": "skills/engineering/domain-modeling",
+      "requested": false,
+      "reason": "required by grill-with-docs (uses the /domain-modeling skill)"
+    },
+    {
+      "name": "grill-with-docs",
+      "upstream_dir": "skills/engineering/grill-with-docs",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "grilling",
+      "upstream_dir": "skills/productivity/grilling",
+      "requested": false,
+      "reason": "required by grill-with-docs (runs a /grilling session)"
+    },
+    {
+      "name": "research",
+      "upstream_dir": "skills/engineering/research",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "setup-matt-pocock-skills",
+      "upstream_dir": "skills/engineering/setup-matt-pocock-skills",
+      "requested": false,
+      "reason": "required by to-spec, to-tickets, triage and wayfinder (issue tracker + triage label config)"
+    },
+    {
+      "name": "teach",
+      "upstream_dir": "skills/productivity/teach",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "to-spec",
+      "upstream_dir": "skills/engineering/to-spec",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "to-tickets",
+      "upstream_dir": "skills/engineering/to-tickets",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "triage",
+      "upstream_dir": "skills/engineering/triage",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "wayfinder",
+      "upstream_dir": "skills/engineering/wayfinder",
+      "requested": true,
+      "reason": "explicitly requested"
+    },
+    {
+      "name": "writing-great-skills",
+      "upstream_dir": "skills/productivity/writing-great-skills",
+      "requested": true,
+      "reason": "explicitly requested"
+    }
+  ],
+  "files": [
+    {
+      "local": "plugins/pocock-core/skills/domain-modeling/ADR-FORMAT.md",
+      "upstream": "skills/engineering/domain-modeling/ADR-FORMAT.md",
+      "sha256": "f1f36cd3f8d3b6474ddd5855da4e233bfc4ae1a1c5024909ccf11871819a41b2"
+    },
+    {
+      "local": "plugins/pocock-core/skills/domain-modeling/CONTEXT-FORMAT.md",
+      "upstream": "skills/engineering/domain-modeling/CONTEXT-FORMAT.md",
+      "sha256": "b8cc318f2a4285b530e908b6bc43901c3c5cd11100362636bbc4216639bef597"
+    },
+    {
+      "local": "plugins/pocock-core/skills/domain-modeling/SKILL.md",
+      "upstream": "skills/engineering/domain-modeling/SKILL.md",
+      "sha256": "152e2c97239affb12a60c5f4a7e74ab546a49ae169688c81f4e2ccc42dafa579"
+    },
+    {
+      "local": "plugins/pocock-core/skills/domain-modeling/agents/openai.yaml",
+      "upstream": "skills/engineering/domain-modeling/agents/openai.yaml",
+      "sha256": "f6bf2aa996c6e6f53fdd0708e18a0d16a56aed8322cca59fedbe3c0d2c75f06b"
+    },
+    {
+      "local": "plugins/pocock-core/skills/grill-with-docs/SKILL.md",
+      "upstream": "skills/engineering/grill-with-docs/SKILL.md",
+      "sha256": "610d091047bcfb9db0f75c057d15538481a721111579fc5ec7f83ad9131a2165"
+    },
+    {
+      "local": "plugins/pocock-core/skills/grill-with-docs/agents/openai.yaml",
+      "upstream": "skills/engineering/grill-with-docs/agents/openai.yaml",
+      "sha256": "94cd0ab161fb468a836349f5ed482ba58ce8e709a05c57ce533d739dbd35cca9"
+    },
+    {
+      "local": "plugins/pocock-core/skills/grilling/SKILL.md",
+      "upstream": "skills/productivity/grilling/SKILL.md",
+      "sha256": "44331dda57f461db4fec3f2efb6ddabe7aaaa0a57ae0f88a883bc61aed8a0587"
+    },
+    {
+      "local": "plugins/pocock-core/skills/grilling/agents/openai.yaml",
+      "upstream": "skills/productivity/grilling/agents/openai.yaml",
+      "sha256": "cf29b9a8dbf35a58a908a6ca4f64dcd86c2b2130291eee0a78b9f706b138825b"
+    },
+    {
+      "local": "plugins/pocock-core/skills/research/SKILL.md",
+      "upstream": "skills/engineering/research/SKILL.md",
+      "sha256": "af378829f015775a3bcd65ff466826722e99359017ae6bae227ca4c9bd14049c"
+    },
+    {
+      "local": "plugins/pocock-core/skills/research/agents/openai.yaml",
+      "upstream": "skills/engineering/research/agents/openai.yaml",
+      "sha256": "9b4c470d63221c1f68f22df70b83e2f12401b317babe0d1b7b5f24a974474d0d"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/SKILL.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
+      "sha256": "def265a8b15ffb8afc3f335d69e175ba9a7fe3991218984b0e49e8345cde3b20"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/domain.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/domain.md",
+      "sha256": "25be404b58798b3cb2d51c93dba2ab052fc3a425632185726ac3f5fcff193b99"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-github.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-github.md",
+      "sha256": "52e9f9f1ec0f6d47c6785ac500708ac0521f34abb4cc5475b5dc747165dab17e"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-gitlab.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-gitlab.md",
+      "sha256": "4470f2f64d015fba01af877233296b401bb0d44b5acb9572ffc3ff6b30e8de88"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-local.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-local.md",
+      "sha256": "ed6add9fe3cdcd2d1ebb2a463cf0eb6a1a86df500f4922b31a1ab50f15b3a705"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/triage-labels.md",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/triage-labels.md",
+      "sha256": "4f53c9b40ce2651e3611aa090eaedbd6dbc9b71ef8c5f7e65eac0d8263190d0d"
+    },
+    {
+      "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/agents/openai.yaml",
+      "upstream": "skills/engineering/setup-matt-pocock-skills/agents/openai.yaml",
+      "sha256": "9527de0110541c45712319025155aeab8dc7d77c6ed6e5e83271bab1851ab939"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/GLOSSARY-FORMAT.md",
+      "upstream": "skills/productivity/teach/GLOSSARY-FORMAT.md",
+      "sha256": "d177def491519d97873291f2e860d8f1d60ead78feecb82eee022177958069c6"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/LEARNING-RECORD-FORMAT.md",
+      "upstream": "skills/productivity/teach/LEARNING-RECORD-FORMAT.md",
+      "sha256": "855f81017625256584bbf62bd5edb9b0c86605c4cc1139c56acc36b802595d17"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/MISSION-FORMAT.md",
+      "upstream": "skills/productivity/teach/MISSION-FORMAT.md",
+      "sha256": "8da6d3ac84eb2eb19f17c260b6acf01c560d3ac7a4501c415eea0e985602f4d7"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/RESOURCES-FORMAT.md",
+      "upstream": "skills/productivity/teach/RESOURCES-FORMAT.md",
+      "sha256": "2bc634a64b0d0daa10904f9222e7aa0d361420dfacabbf092fbe3a72222edc08"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/SKILL.md",
+      "upstream": "skills/productivity/teach/SKILL.md",
+      "sha256": "6d2dbe5e03084cf26fef66b535127b36cd1bcbe9478e26b0626029cd51dc2259"
+    },
+    {
+      "local": "plugins/pocock-core/skills/teach/agents/openai.yaml",
+      "upstream": "skills/productivity/teach/agents/openai.yaml",
+      "sha256": "5856f3ae8aec742f1499c640aecdd5f1d6af5fa210a7c6ec794de8263a6f733f"
+    },
+    {
+      "local": "plugins/pocock-core/skills/to-spec/SKILL.md",
+      "upstream": "skills/engineering/to-spec/SKILL.md",
+      "sha256": "267638edd513b5918de626ad5605d261952abb7428cb308869c663ca924e93e7"
+    },
+    {
+      "local": "plugins/pocock-core/skills/to-spec/agents/openai.yaml",
+      "upstream": "skills/engineering/to-spec/agents/openai.yaml",
+      "sha256": "1c5b4d1e3d8e52287ef19cc2742fdbbfae1914ac75d33af3e4c8174f08cc55bb"
+    },
+    {
+      "local": "plugins/pocock-core/skills/to-tickets/SKILL.md",
+      "upstream": "skills/engineering/to-tickets/SKILL.md",
+      "sha256": "5ecdf1d4df8a360ed39df21a2347f97ba177afd449a577da4f6b6ea8e1ebb808"
+    },
+    {
+      "local": "plugins/pocock-core/skills/to-tickets/agents/openai.yaml",
+      "upstream": "skills/engineering/to-tickets/agents/openai.yaml",
+      "sha256": "21bc6215fffcd7614e9f772bb1760e87cc5fc7dcc707e7d282bc9414267a6090"
+    },
+    {
+      "local": "plugins/pocock-core/skills/triage/AGENT-BRIEF.md",
+      "upstream": "skills/engineering/triage/AGENT-BRIEF.md",
+      "sha256": "5b78d347cc53f6bcf7b875106005ccf5315055fa4cf75eb28d41e96ee426d27b"
+    },
+    {
+      "local": "plugins/pocock-core/skills/triage/OUT-OF-SCOPE.md",
+      "upstream": "skills/engineering/triage/OUT-OF-SCOPE.md",
+      "sha256": "2526f998fd7ca5e956d3f6f234bcc2431a5971ee769f1148ddc60b92f04d5914"
+    },
+    {
+      "local": "plugins/pocock-core/skills/triage/SKILL.md",
+      "upstream": "skills/engineering/triage/SKILL.md",
+      "sha256": "d45827c299c021f77b0f146fefa3ee679b13f99e9a2ffdf48e8de2347adeefe1"
+    },
+    {
+      "local": "plugins/pocock-core/skills/triage/agents/openai.yaml",
+      "upstream": "skills/engineering/triage/agents/openai.yaml",
+      "sha256": "2e683717720cf456d165d0bb1a68bb600d0b6a8ccb61841c172e50d26f95351c"
+    },
+    {
+      "local": "plugins/pocock-core/skills/wayfinder/SKILL.md",
+      "upstream": "skills/engineering/wayfinder/SKILL.md",
+      "sha256": "257e40665b28ae959ffdcb97d7a72b074360f4a3d201bd84786505308546e434"
+    },
+    {
+      "local": "plugins/pocock-core/skills/wayfinder/agents/openai.yaml",
+      "upstream": "skills/engineering/wayfinder/agents/openai.yaml",
+      "sha256": "88bc81a11a6d52ac67aeaa76b8b619e387020d47c5133a4dd4927fd15c4ad073"
+    },
+    {
+      "local": "plugins/pocock-core/skills/writing-great-skills/GLOSSARY.md",
+      "upstream": "skills/productivity/writing-great-skills/GLOSSARY.md",
+      "sha256": "cccd684c73fb7a06f523497b0121765f92d2b33d6ef9c51602294849233451d6"
+    },
+    {
+      "local": "plugins/pocock-core/skills/writing-great-skills/SKILL.md",
+      "upstream": "skills/productivity/writing-great-skills/SKILL.md",
+      "sha256": "4d6ccbc3760b1bd4107c495a79872286ea69494003f3b0a719fc95b147457061"
+    },
+    {
+      "local": "plugins/pocock-core/skills/writing-great-skills/agents/openai.yaml",
+      "upstream": "skills/productivity/writing-great-skills/agents/openai.yaml",
+      "sha256": "b3c555d2654ec61aed78f8435f583c6a0cd6bf980d71317724682ad20075c33d"
+    }
+  ]
+}

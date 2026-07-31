@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "hjarenas-agentic-skills",
+  "owner": {
+    "name": "hjarenas",
+    "url": "https://github.com/hjarenas"
+  },
+  "metadata": {
+    "description": "The TRIP development workflow, a Karpathy-style LLM-wiki for project memory, prompt-driven Codex delegation, and a curated set of Matt Pocock's engineering skills.",
+    "version": "1.0.0"
+  },
+  "allowCrossMarketplaceDependenciesOn": ["openai-codex"],
+  "plugins": [
+    {
+      "name": "trip",
+      "source": "./plugins/trip",
+      "description": "Plan / Implement / Review / Test workflow with versioned docs, changelog and release ceremony.",
+      "category": "workflow",
+      "tags": ["workflow", "planning", "code-review", "release"]
+    },
+    {
+      "name": "trip-wiki",
+      "source": "./plugins/trip-wiki",
+      "description": "Project memory as an LLM wiki: atomic linked pages under docs/archi/ instead of one monolithic ARCHI.md.",
+      "category": "memory",
+      "tags": ["memory", "llm-wiki", "documentation", "architecture"]
+    },
+    {
+      "name": "codex-bridge",
+      "source": "./plugins/codex-bridge",
+      "description": "Prompt-driven Codex delegation: plan review, code review, implementation and second opinions, with TRIP verdict tags.",
+      "category": "delegation",
+      "tags": ["codex", "review", "delegation"]
+    },
+    {
+      "name": "pocock-core",
+      "source": "./plugins/pocock-core",
+      "description": "A vendored subset of Matt Pocock's engineering skills: grilling, specs, tickets, triage, research, teaching and wayfinding.",
+      "category": "engineering",
+      "tags": ["planning", "specs", "tickets", "triage", "teaching"]
+    },
+    {
+      "name": "toolbox",
+      "source": "./plugins/toolbox",
+      "description": "Small standalone helpers: Conventional Commits with no AI attribution, plus short-form exploration and debugging commands.",
+      "category": "utilities",
+      "tags": ["git", "conventional-commits", "debugging", "exploration"]
+    }
+  ]
+}
