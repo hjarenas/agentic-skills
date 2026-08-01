@@ -17,9 +17,17 @@ Installing `trip` pulls in `trip-wiki` automatically (declared dependency). The 
 independent:
 
 ```bash
-/plugin install codex-bridge@hjarenas-agentic-skills   # needs the OpenAI codex plugin, see below
 /plugin install pocock-core@hjarenas-agentic-skills
 /plugin install toolbox@hjarenas-agentic-skills
+
+# codex-bridge depends on OpenAI's own Codex plugin, which lives in a separate marketplace.
+# Claude Code will not auto-install a plugin from a marketplace you haven't added, so this
+# is a required manual step before codex-bridge's skills (codex-plan-review, etc.) register —
+# see "Codex integration" below for why it stays a separate plugin.
+/plugin marketplace add openai/codex-plugin-cc
+/plugin install codex@openai-codex
+/codex:setup
+/plugin install codex-bridge@hjarenas-agentic-skills
 ```
 
 For local development, add the working copy directly:
@@ -161,14 +169,10 @@ alongside if you want a personal vault; `trip-wiki` is for the code's own memory
 
 ## Codex integration
 
-`codex-bridge` depends on OpenAI's plugin, which must be added first (Claude Code will not
-auto-install a plugin from a marketplace you have not added):
-
-```bash
-/plugin marketplace add openai/codex-plugin-cc
-/plugin install codex@openai-codex
-/codex:setup
-```
+`codex-bridge` depends on OpenAI's own Codex plugin, from a separate marketplace — see the
+Install section above for the required commands (`/plugin marketplace add openai/codex-plugin-cc`
+before `/plugin install codex@openai-codex`; Claude Code will not auto-install a plugin from a
+marketplace you have not added).
 
 ### Why these skills still exist alongside `/codex:review`
 
