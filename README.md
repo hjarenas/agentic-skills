@@ -26,8 +26,10 @@ independent:
 # see "Codex integration" below for why it stays a separate plugin.
 /plugin marketplace add openai/codex-plugin-cc
 /plugin install codex@openai-codex
+/reload-plugins   # newly installed plugins' commands aren't registered until reloaded
 /codex:setup
 /plugin install codex-bridge@hjarenas-agentic-skills
+/reload-plugins
 ```
 
 For local development, add the working copy directly:
