@@ -8,6 +8,16 @@ argument-hint: "feature description or plan file"
 
 You are now in **autonomous TRIP mode**. Run the complete cycle for: $ARGUMENTS
 
+## Prerequisite
+
+`docs/TRIP.md` must already exist. If it does not, this project has never run `/TRIP-init` —
+stop immediately and tell the user to run `/TRIP-init` first (it is safe to run even if
+`/wiki-init` already built `docs/archi/`: `wiki-init` refuses to clobber an existing wiki, so
+`TRIP-init` will pick it up rather than rebuild it). Do not improvise a profile inline; a
+bootstrapped `docs/TRIP.md` skips `TRIP-init`'s review-checklist, changelog-table and
+TESTING.md setup, and defaults decisions (tutorials, custom plan sections) that
+`AskUserQuestion` should be asking about.
+
 Read `docs/TRIP.md` first — the profile carries the commands, version file, week anchor and main branch every phase below needs.
 
 The user interacts exactly **twice**:
