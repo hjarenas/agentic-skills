@@ -38,6 +38,20 @@ For local development, add the working copy directly:
 claude plugin marketplace add /path/to/agentic-skills
 ```
 
+## Optional: rtk for token efficiency
+
+TRIP and `codex-bridge` shell out constantly — git, `scripts/*.py`, `codex-companion.mjs` — so a
+token-savings proxy pays off here more than in a typical repo.
+[`rtk`](https://www.rtk-ai.app/) filters that bash output before it reaches the model's context:
+
+```bash
+brew install rtk
+```
+
+Once installed, a Claude Code hook transparently rewrites eligible commands (`git status` → `rtk
+git status`) — no prompt or plugin changes needed. This is a machine-level setup, not a plugin
+dependency: none of these plugins require it, and it isn't declared in any `plugin.json`.
+
 ## Plugins
 
 | Plugin | Skills | What it does |
