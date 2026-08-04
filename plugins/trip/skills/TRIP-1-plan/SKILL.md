@@ -8,13 +8,19 @@ argument-hint: "describe the feature you want to build"
 
 You are now in **planning mode** for **this project**.
 
+## Operating model
+
+Read and obey [the agent routing contract](../../references/agent-routing.md). Parse routing
+overrides from `$ARGUMENTS`, then treat the remainder as the feature request. You are the
+orchestrator: all discovery, plan writing, and review work must be performed by workers.
+
 ## Prerequisites - Read First
 
-Before creating any plan:
+Before dispatching planning workers:
 
-0. Read `docs/TRIP.md` — this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, run `/TRIP-init` first (or, for a project set up before TRIP became a plugin, `/TRIP-upgrade`).
-1. Read `docs/archi/index.md` in full, then open the wiki pages covering the area this feature touches and follow their `[[links]]` one hop. Do not read the whole wiki — the index exists so you don't have to. (Projects that have not run `/wiki-migrate` still have a monolithic `docs/ARCHI.md`; read that in full instead.)
-2. Query the code-review-graph MCP tools for the feature's actual code-level structure: `get_minimal_context(task="<feature summary>")` first, then `semantic_search_nodes` for modules matching the feature's keywords and `get_impact_radius`/`query_graph` (`callers_of`/`imports_of`) on anything the feature will touch. Use `detail_level="minimal"`; escalate only if insufficient.
+0. Read `docs/TRIP.md`, including `Agent routing`. If it is missing, run `/TRIP-init` first (or `/TRIP-upgrade`).
+1. Dispatch `discovery` to read the relevant wiki pages and query the code-review graph. Require an evidence report including drift, impacted files, callers, conventions, and unknowns.
+2. Dispatch `planner` with the feature request, profile, and discovery report. The planner owns clarification proposals and every plan-file edit.
 
 The wiki documents intent; the graph reflects the code as it actually is. If they disagree (undocumented module, stale pattern), note the drift in the plan rather than silently trusting one over the other — and add a to-do to run `/wiki-ingest` after the work lands.
 
@@ -47,7 +53,7 @@ After the user answers, proceed **directly to writing the plan** (Step 2) — no
 
 ## Step 2: Plan Document Creation
 
-Once understanding is confirmed, create the plan document.
+Once understanding is confirmed, instruct the `planner` worker to create the plan document.
 
 ### File Naming
 
@@ -149,44 +155,47 @@ Project-specific technical concerns: use the bullets from docs/TRIP.md § Plan c
 
 ---
 
-## Step 3: Codex Second-Opinion Review
+## Step 3: Independent Second-Opinion Review
 
-Before the user sees the plan, run the Codex plan review loop.
+Before the user sees the plan, run the configured independent plan-review loop.
 
 ### Confirm
 
-`AskUserQuestion`: "I'll run Codex as a second-opinion reviewer and iterate until clean. Proceed?"
-Options: "Yes, run Codex review" (recommended) / "Skip Codex, go to user review" / "Cap iterations at N"
+`AskUserQuestion`: "I'll run an independent second-opinion reviewer and iterate until clean. Proceed?"
+Options: "Yes, run review" (recommended) / "Skip review, go to user review" / "Cap iterations at N"
 
 Skip for trivial plans (single-file, low-risk). Run for non-trivial (new module, schema/algorithm change).
 
 ### Loop
 
-1. **Start**: invoke the `codex-plan-review` skill with the plan path.
+1. **Start**: dispatch the configured `plan-reviewer` with read-only access and the plan path. For `codex-bridge`, invoke `codex-plan-review` with explicit model/effort overrides.
 2. **Parse trailing tag**: `APPROVED` -> Step 4. `NEEDS_REWORK` -> surface to user. `REQUEST_CHANGES` -> continue.
-3. **Address findings critically** — quote each P1/P2, push back on incorrect ones, fix legitimate ones by editing the plan in place.
-4. **Write implementer notes** (1-3 sentences): which findings you fixed, which you pushed back on and why, any user decisions that override existing docs or environment limitations that can't be resolved in the plan.
-5. **Resume**: invoke `codex-plan-review` again with the same plan path, passing the notes — e.g. `<plan-path> Fixed X. Pushed back on Y because Z. User decided W.` The skill detects the stored review and switches to its resume prompt.
+3. **Address findings** — dispatch `planner` to evaluate each P1/P2 and edit legitimate findings. It must document any pushback.
+4. **Collect planner notes** (1-3 sentences): which findings the planner fixed, which it pushed
+   back on and why, plus user decisions or environment limitations.
+5. **Resume**: dispatch `plan-reviewer` again with the same plan path and planner notes. For `codex-bridge`, invoke `codex-plan-review` with those notes and the configured overrides.
    -> back to step 2.
 6. **Cap at 5 rounds** (or user-specified). Surface remaining findings and let user decide.
 
 The notes are not optional: each Codex turn is a fresh run that only knows what the prompt carries, so without them Codex re-raises findings you already settled.
 
-Surface Codex reviews verbatim. Keep edits scoped to findings. Reset (`codex-plan-review reset <plan-path>`) only if the review context is genuinely confused.
+Surface worker reviews verbatim. Keep planner edits scoped to findings. Reset persistent reviewer
+state only if genuinely confused.
 
-`codex-plan-review` needs the `codex-bridge` plugin. If it is not installed, either install it or skip Codex review and go straight to Step 4 — the loop is an accelerator, not a gate.
+If the selected harness is unavailable, ask the user to choose an installed harness. Do not
+silently replace or skip a configured reviewer.
 
 ---
 
 ## Step 4: User Review & Validation
 
-After Codex review converges (or is skipped), present a summary to the user including:
+After independent review converges (or is explicitly skipped), present a summary including:
 
 - **Feature**: [name]
 - **Approach**: [1-2 sentences]
 - **Files affected**: [count] files ([list key ones])
 - **Estimated complexity**: [simple/moderate/complex]
-- **Codex status**: [APPROVED / skipped / capped at N rounds with open findings]
+- **Review status**: [harness/model, APPROVED / skipped / capped with open findings]
 
 Then **use the `AskUserQuestion` tool** to collect feedback:
 
@@ -195,8 +204,8 @@ Then **use the `AskUserQuestion` tool** to collect feedback:
 
 Handle feedback:
 
-- **If "Request changes"**: Update the plan and re-present. Run another Codex pass if changes are substantive.
-- **If "Needs rework"**: Discuss issues, rework the plan, and re-present.
+- **If "Request changes"**: Dispatch `planner` to update the plan and re-present. Run another independent review if substantive.
+- **If "Needs rework"**: Discuss issues, then dispatch `planner` to rework and re-present.
 - **If "Other" (custom input)**: Handle accordingly.
 - **If "Approved"**: first persist the plan (below), then ask about implementation timing.
 
@@ -204,9 +213,9 @@ Handle feedback:
 
 Once the plan is approved, create its feature branch immediately and push the plan doc — don't leave an approved plan sitting uncommitted on `main` even if implementation won't start right away.
 
-1. `git status` to confirm a clean tree (stash/commit anything unrelated first — never carry someone else's uncommitted work onto a new branch).
-2. `git checkout -b feat/[short-description]` (or `fix/[short-description]`), derived the same way `TRIP-2-implement` Step 0 derives it, so the two stay the same branch.
-3. Commit **only** the plan file: `docs(plan): add <feature-name> implementation plan` (see the `commit` skill for message conventions — no `Co-Authored-By`), then `git push -u origin <branch>`.
+1. Dispatch `workspace-worker` to confirm a clean tree. If unrelated work exists, report it to the user; do not stash or commit it without authorization.
+2. Have `workspace-worker` create `feat/[short-description]` (or `fix/[short-description]`).
+3. Have `workspace-worker` commit **only** the plan file and push the branch.
 4. Share the plan's GitHub blob link with the user (`https://github.com/<owner>/<repo>/blob/<branch>/docs/1-plans/F_x.y.z_<feature-name>.plan.md`) so it's reviewable/shareable before implementation begins.
 
 Then **use the `AskUserQuestion` tool** to ask:

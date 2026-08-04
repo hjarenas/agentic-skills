@@ -1,7 +1,7 @@
 ---
 name: codex-implement
 description: Delegate implementation of a TRIP plan (or a scoped part of it) to Codex CLI
-argument-hint: "<plan-path> [instructions] | reset <plan-path> | show <plan-path>"
+argument-hint: "[--model M] [--effort E] <plan-path> [instructions] | reset/show <plan-path>"
 ---
 
 # Codex Implement
@@ -19,6 +19,8 @@ Codex's report is stored at `.codex-bridge/<key>.md` (gitignored).
 
 ## Arguments
 
+- `--model <model>` / `--effort <effort>` — optional per-run runtime overrides. Remove them
+  before parsing the action and target.
 - `<target>` — usually a plan path (`docs/1-plans/F_*.plan.md`); a free-form label for unplanned work.
 - Optional trailing instructions — scope control, e.g. `"Implement only: <batch checkboxes>"` or `"Now implement: <next batch>"`.
 - `reset <target>` — drop the stored report, next call starts fresh.
@@ -29,11 +31,12 @@ Codex's report is stored at `.codex-bridge/<key>.md` (gitignored).
 Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
 `P="${CLAUDE_PLUGIN_ROOT}/skills/codex-implement/prompts"`.
 
-1. **Parse `$ARGUMENTS`**: extract action (`reset`/`show`/auto) and target.
+1. **Parse `$ARGUMENTS`**: extract optional model/effort, action (`reset`/`show`/auto), and
+   target. Build `MODEL_ARGS` as the present runtime flags.
 
 2. **Auto**:
-   - **Start** (no stored report): `$RUN <target> --write --prompt-file $P/implement.tpl --extra "<scope instructions>"`
-   - **Resume** (next batch): `$RUN <target> --write --resume-last --prompt-file $P/continue.tpl --notes "<what you fixed after the last batch and why>" --extra "<next batch>"`
+   - **Start** (no stored report): `$RUN <target> $MODEL_ARGS --write --prompt-file $P/implement.tpl --extra "<scope instructions>"`
+   - **Resume** (next batch): `$RUN <target> $MODEL_ARGS --write --resume-last --prompt-file $P/continue.tpl --notes "<what you fixed after the last batch and why>" --extra "<next batch>"`
 
 3. **Reset**: `$RUN <target> --prompt-file $P/implement.tpl --reset`
 

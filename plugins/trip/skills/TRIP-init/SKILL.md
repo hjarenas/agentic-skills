@@ -174,6 +174,25 @@ yours, and no plugin update will touch it.
 Omit any row the project genuinely does not have — an absent row is honest, a placeholder
 is a trap.
 
+## Agent routing
+
+Invocation arguments override this table for the current run. Blank model or effort means the
+harness default.
+
+| Role | Harness | Model | Effort |
+| :--- | :--- | :--- | :--- |
+| discovery | subagent |  |  |
+| planner | subagent |  |  |
+| plan-reviewer | codex-bridge |  |  |
+| implementer | codex-bridge |  |  |
+| batch-reviewer | subagent |  |  |
+| fixer | subagent |  |  |
+| test-worker | subagent |  |  |
+| code-reviewer | codex-bridge |  |  |
+| workspace-worker | subagent |  |  |
+| release-worker | subagent |  |  |
+| release-verifier | subagent |  |  |
+
 ## Integration checks
 
 <When does a change need integration/E2E verification, and with what? e.g. "selectors
