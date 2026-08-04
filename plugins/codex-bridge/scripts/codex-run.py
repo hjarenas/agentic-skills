@@ -40,6 +40,11 @@ from pathlib import Path
 
 STATE_DIRNAME = ".codex-bridge"
 COMPANION_RELPATH = Path("plugins/codex/scripts/codex-companion.mjs")
+CURRENT_COMPANION_GLOB = "*/codex/*/scripts/codex-companion.mjs"
+LEGACY_COMPANION_GLOBS = (
+    f"*/{COMPANION_RELPATH}",
+    f"*/*/{COMPANION_RELPATH}",
+)
 
 
 def die(msg: str, code: int = 1) -> "None":
@@ -69,9 +74,20 @@ def find_companion() -> Path:
             "  /plugin install codex@openai-codex"
         )
 
-    matches = [p for p in cache.glob(f"*/{COMPANION_RELPATH}") if p.is_file()]
-    matches += [p for p in cache.glob(f"*/*/{COMPANION_RELPATH}") if p.is_file()]
-    if not matches:
+    # Current Claude plugin cache layout:
+    #   cache/<marketplace>/codex/<version>/scripts/codex-companion.mjs
+    # Prefer it over older layouts even if a stale legacy cache has a newer mtime.
+    current_matches = [p for p in cache.glob(CURRENT_COMPANION_GLOB) if p.is_file()]
+    if current_matches:
+        return max(current_matches, key=lambda p: p.stat().st_mtime)
+
+    legacy_matches = [
+        p
+        for pattern in LEGACY_COMPANION_GLOBS
+        for p in cache.glob(pattern)
+        if p.is_file()
+    ]
+    if not legacy_matches:
         die(
             "the `codex` plugin is not installed (no codex-companion.mjs under "
             f"{cache}). Install it with:\n"
@@ -80,7 +96,7 @@ def find_companion() -> Path:
             "  /codex:setup\n"
             "Or point $CODEX_COMPANION at the script directly."
         )
-    return max(matches, key=lambda p: p.stat().st_mtime)
+    return max(legacy_matches, key=lambda p: p.stat().st_mtime)
 
 
 def target_key(target: str) -> str:
