@@ -76,9 +76,9 @@ stop on. `trip` does not depend on it.
 flowchart TD
     INIT["/TRIP-init<br/>once per project"] --> PROFILE["docs/TRIP.md + docs/archi/<br/>+ docs/3-code-review/"]
 
-    PROFILE -.reads.-> PLAN
+    PROFILE -. reads .-> PLAN
 
-    subgraph loop [" "]
+    subgraph FEATURE_LOOP["Feature delivery loop"]
         direction TB
         PLAN["/TRIP-1-plan"] --> PR{"codex-plan-review<br/>APPROVED?"}
         PR -->|REQUEST_CHANGES| PLAN
@@ -93,25 +93,80 @@ flowchart TD
         INGEST --> PRO["version · changelog · CR<br/>commit · PR · tag"]
     end
 
-    PRO -.next feature.-> PLAN
+    PRO -. next feature .-> PLAN
+```
+
+### Detailed delegated flow
+
+The TRIP skill running in the foreground is a pure orchestrator: it routes artifacts and evaluates
+worker completion tags, but never performs discovery, planning, implementation, review, testing,
+git, or release work itself. Each worker below is selected from `docs/TRIP.md` by role, harness,
+model, and effort.
+
+```mermaid
+flowchart TD
+    O["TRIP orchestrator<br/>route · sequence · report"]
+
+    subgraph P["1 · Plan"]
+        D["discovery<br/>codebase evidence"] --> PL["planner<br/>clarifications + plan"]
+        PL --> Q{"user decision<br/>needed?"}
+        Q -->|yes| UQ["orchestrator relays question"] --> PL
+        Q -->|no| PR["plan-reviewer<br/>independent review"]
+        PR -->|REQUEST_CHANGES| PL
+        PR -->|APPROVED| UA{"user approves plan?"}
+        UA -->|changes| PL
+        UA -->|approved| WS1["workspace-worker<br/>branch · plan commit · push"]
+    end
+
+    subgraph I["2 · Implement, review, and test"]
+        IMP["implementer<br/>scoped green batch"] --> BR{"batch-reviewer<br/>BATCH_APPROVED?"}
+        BR -->|fixes| BFX["fixer<br/>batch corrections"] --> BR
+        BR -->|yes| MT{"test-worker<br/>micro-gate green?"}
+        MT -->|red| MFX["fixer<br/>micro-gate corrections"] --> MT
+        MT -->|green| WS2["workspace-worker<br/>stage checkpoint"]
+        WS2 --> MORE{"more batches?"}
+        MORE -->|yes| IMP
+        MORE -->|no| FULL["batch-reviewer<br/>full-diff pass"]
+        FULL -->|fixes| FFX["fixer<br/>full-diff corrections"] --> FULL
+        FULL -->|clean| TG{"test-worker<br/>full gate green?"}
+        TG -->|red| GFX["fixer<br/>gate corrections"] --> TG
+        TG -->|green| CR{"code-reviewer<br/>APPROVED?"}
+        CR -->|REQUEST_CHANGES| CFX["fixer<br/>review corrections"] --> TG
+    end
+
+    subgraph R["3 · Release"]
+        RW["release-worker<br/>version · CR · changelog · wiki · README"]
+        RW --> RV{"release-verifier<br/>RELEASE_APPROVED?"}
+        RV -->|changes| RW
+        RV -->|yes| UR{"user authorizes PR?"}
+        UR -->|yes| RP["release-worker<br/>commit · push · open PR"]
+        RP --> RPV{"release-verifier<br/>branch + PR check"}
+        RPV -->|changes| RW
+        RPV -->|approved| DONE["user reviews and merges PR"]
+    end
+
+    O --> D
+    WS1 --> IMP
+    CR -->|APPROVED| RW
+    DONE -.next feature.-> O
 ```
 
 **Walking one feature through:**
 
 1. **`/TRIP-1-plan "add rate limiting"`** — reads `docs/TRIP.md` for the project profile, then
-   `docs/archi/index.md` and the two or three pages the feature touches (not the whole wiki).
-   Asks clarifying questions, writes `docs/1-plans/F_0.5.0_rate-limiting.plan.md`, then loops
-   `codex-plan-review` until `APPROVED`. Creates the branch and commits the plan.
+   dispatches discovery and planning workers for the relevant architecture pages and code graph.
+   The orchestrator relays clarifying questions, an independent plan reviewer loops with the
+   planner until `APPROVED`, and a workspace worker creates the branch and commits the plan.
 
 2. **`/TRIP-2-implement <plan>`** — splits the plan into batches that each leave the tree green,
-   delegates each to `codex-implement`, and reviews the delta itself between batches, fixing
-   problems directly and carrying the corrections forward as notes. Then the **testing gate**
-   (lint, typecheck, affected tests, author missing tests), then the `codex-code-review` loop
-   until `APPROVED`. `/codex:adversarial-review` is available as an extra pass on risky changes.
+   delegates each to the configured implementer. Independent batch-reviewer, fixer, test-worker,
+   and workspace-worker roles review, correct, gate, and checkpoint every batch. A full testing
+   gate precedes the independent code-review loop. `/codex:adversarial-review` remains available
+   as an extra pass on risky changes.
 
-3. **`/TRIP-3-release <plan>`** — version bump, promotes the Codex review to
-   `docs/3-code-review/CR_wa_vx.y.z.md`, changelog file and table, then **`/wiki-ingest`** to fold
-   the change into `docs/archi/` and write `log/v0.5.0.md`. Commits, opens the PR, tags after merge.
+3. **`/TRIP-3-release <plan>`** — a release worker bumps the version, promotes the review, writes
+   changelogs, ingests the wiki, and updates the README. An independent release verifier checks
+   the artifacts before the release worker commits, pushes, and opens the PR.
 
 **Off the main line:** `/TRIP-research` (investigate, with `codex-ask` to red-team the conclusion),
 `/TRIP-hotfix` (skip the ceremony for urgent fixes), `/TRIP-review` (audit a past version),
