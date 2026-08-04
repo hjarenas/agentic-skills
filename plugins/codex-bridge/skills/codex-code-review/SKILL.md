@@ -1,7 +1,7 @@
 ---
 name: codex-code-review
 description: Iterative Codex CLI code review against an implementation plan
-argument-hint: "<plan-path> [extra context] | reset <plan-path> | show <plan-path>"
+argument-hint: "[--model M] [--effort E] <plan-path> [extra context] | reset/show <plan-path>"
 ---
 
 # Codex Code Review
@@ -27,6 +27,8 @@ Each turn is a **fresh Codex run**; the previous review is stored under `.codex-
 
 ## Arguments
 
+- `--model <model>` / `--effort <effort>` — optional per-run runtime overrides. Remove them
+  before parsing the action and target.
 - `<target>` — auto: start if no stored review, resume if one exists. Usually a plan path (`docs/1-plans/F_*.plan.md`) or a free-form label for unplanned work.
 - `reset <target>` — drop the stored review, next call starts fresh.
 - `show <target>` — display the latest review without calling Codex.
@@ -36,11 +38,12 @@ Each turn is a **fresh Codex run**; the previous review is stored under `.codex-
 Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
 `P="${CLAUDE_PLUGIN_ROOT}/skills/codex-code-review/prompts"`.
 
-1. **Parse `$ARGUMENTS`**: extract action (`reset`/`show`/auto) and target.
+1. **Parse `$ARGUMENTS`**: extract optional model/effort, action (`reset`/`show`/auto), and
+   target. Build `MODEL_ARGS` as the present runtime flags.
 
 2. **Auto**:
-   - **Start**: `$RUN <target> --prompt-file $P/start.tpl --extra "<lint/typecheck/test summary + intent>"`
-   - **Resume**: `$RUN <target> --prompt-file $P/resume.tpl --notes "<what you fixed, what you pushed back on and why>" --extra "<extra>"`
+   - **Start**: `$RUN <target> $MODEL_ARGS --prompt-file $P/start.tpl --extra "<lint/typecheck/test summary + intent>"`
+   - **Resume**: `$RUN <target> $MODEL_ARGS --prompt-file $P/resume.tpl --notes "<what you fixed, what you pushed back on and why>" --extra "<extra>"`
 
 3. **Reset**: `$RUN <target> --prompt-file $P/start.tpl --reset`
 

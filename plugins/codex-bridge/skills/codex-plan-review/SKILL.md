@@ -1,7 +1,7 @@
 ---
 name: codex-plan-review
 description: Iterative Codex CLI review of a planning document
-argument-hint: "<plan-path> [extra context] | reset <plan-path> | show <plan-path>"
+argument-hint: "[--model M] [--effort E] <plan-path> [extra context] | reset/show <plan-path>"
 ---
 
 # Codex Plan Review
@@ -19,6 +19,8 @@ spliced back in as the prompt's prior-review block.
 
 ## Arguments
 
+- `--model <model>` / `--effort <effort>` — optional per-run runtime overrides. Remove them
+  before parsing the action and target.
 - `<plan-path>` — auto: start if no stored review, resume if one exists. Trailing free-text is extra context.
 - `reset <plan-path>` — drop the stored review, next call starts fresh.
 - `show <plan-path>` — display the latest review without calling Codex.
@@ -28,12 +30,13 @@ spliced back in as the prompt's prior-review block.
 Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
 `P="${CLAUDE_PLUGIN_ROOT}/skills/codex-plan-review/prompts"`.
 
-1. **Parse `$ARGUMENTS`**: extract action (`reset`/`show`/auto) and plan path.
+1. **Parse `$ARGUMENTS`**: extract optional model/effort, action (`reset`/`show`/auto), and plan
+   path. Build `MODEL_ARGS` as the present `--model <model>` and `--effort <effort>` flags.
 
 2. **Auto** — a stored review exists if `.codex-bridge/<key>.md` is present; `--show` failing is
    the simplest check.
-   - **Start** (no stored review): `$RUN <plan-path> --prompt-file $P/start.tpl --extra "<extra>"`
-   - **Resume** (stored review exists): `$RUN <plan-path> --prompt-file $P/resume.tpl --notes "<what you changed and why>" --extra "<extra>"`
+   - **Start** (no stored review): `$RUN <plan-path> $MODEL_ARGS --prompt-file $P/start.tpl --extra "<extra>"`
+   - **Resume** (stored review exists): `$RUN <plan-path> $MODEL_ARGS --prompt-file $P/resume.tpl --notes "<what you changed and why>" --extra "<extra>"`
 
 3. **Reset**: `$RUN <plan-path> --prompt-file $P/start.tpl --reset`
 

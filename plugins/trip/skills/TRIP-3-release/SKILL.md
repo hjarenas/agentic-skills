@@ -10,6 +10,12 @@ You are now in **release mode** for **this project**.
 
 Release: $ARGUMENTS
 
+## Operating model
+
+Read and obey [the agent routing contract](../../references/agent-routing.md). Parse routing
+overrides from `$ARGUMENTS`, then treat the remainder as the plan or feature label. You are a
+pure orchestrator. Dispatch all verification and release mutations; do none yourself.
+
 This skill runs after `TRIP-2-implement` has converged (implementation done, testing gate green, Codex code review `APPROVED` or explicitly skipped). It is normally chained from TRIP-2 in the same session, but can be invoked standalone in a fresh session.
 
 ---
@@ -23,7 +29,7 @@ This skill runs after `TRIP-2-implement` has converged (implementation done, tes
 
 ### Standalone verification (fresh session, not chained from TRIP-2)
 
-If this skill was NOT chained from a TRIP-2 session in the current conversation, verify before any release step:
+If this skill was NOT chained from a TRIP-2 session, dispatch `test-worker` to verify before any release step:
 
 ```bash
 # Commands come from docs/TRIP.md § Commands — read it first.
@@ -38,7 +44,14 @@ Any failure blocks the release — fix or return to `TRIP-2-implement` first.
 
 ---
 
-## Step 1: Get Current Date/Week
+## Steps 1-8: Prepare release artifacts
+
+Dispatch `release-worker` with the plan, `docs/TRIP.md`, approved review, and Steps 1-8 below.
+It owns every file edit and command in these steps. When it reports completion, dispatch
+`release-verifier` read-only to check versions, placeholders, changelog links, wiki lint, README,
+branch safety, and the full diff. Route corrections back to `release-worker`, then re-verify.
+
+### Step 1: Get Current Date/Week
 
 Run this command to get date and project week:
 
@@ -48,13 +61,13 @@ date '+%d-%m-%Y %H:%M' && echo "Project week: $(( ( $(date +%s) - $(date -d '<we
 
 Use the project week in all subsequent steps.
 
-## Step 2: Version Update
+### Step 2: Version Update
 
 - If not already done in the plan phase, propose new SemVer version (x.y.z)
 - Update version in `<version file — docs/TRIP.md § Project>`
 - Do not modify anything else in this file
 
-## Step 3: Promote Code Review
+### Step 3: Promote Code Review
 
 Now that week (`a`) and version (`x.y.z`) are known:
 
@@ -75,11 +88,11 @@ Now that week (`a`) and version (`x.y.z`) are known:
 
 5. Verify: no `<...>` placeholders, no `PROMOTION_READY`, version matches version file.
 
-## Step 4: Commit Message
+### Step 4: Commit Message
 
 Propose a one-line commit message.
 
-## Step 5: Changelog File
+### Step 5: Changelog File
 
 Create `docs/2-changelog/wa_vx.y.z.md` (a=project week, x.y.z=version):
 
@@ -96,7 +109,7 @@ Create `docs/2-changelog/wa_vx.y.z.md` (a=project week, x.y.z=version):
 [Describe what changed]
 ```
 
-## Step 6: Changelog Table
+### Step 6: Changelog Table
 
 Add entry on top of `docs/2-changelog/changelog_table.md`:
 
@@ -106,7 +119,7 @@ Add entry on top of `docs/2-changelog/changelog_table.md`:
 
 Also add a summary entry in the Changelog Summary section.
 
-## Step 7: Architecture Update
+### Step 7: Architecture Update
 
 Fold this release into the architecture wiki by invoking the `wiki-ingest` skill with the
 version you just bumped to:
@@ -146,7 +159,7 @@ Create `docs/5-tuto/tuto_x.y.z.md` explaining the core principle.
 - Style: <style — docs/TRIP.md § Tutorials>
 -->
 
-## Step 8: README Update
+### Step 8: README Update
 
 Update `README.md` with the new version number.
 Also update relevant sections whenever needed.
@@ -162,6 +175,9 @@ After completing all documentation steps, **use the `AskUserQuestion` tool** to 
 
 ## Step 9: Commit (on the feature branch)
 
+Dispatch this step to `release-worker`, then have `release-verifier` confirm the commit contains
+only intended release work and remains on the feature branch.
+
 ```bash
 git add -A && git commit -m "<commit message from Step 4>"
 ```
@@ -169,6 +185,9 @@ git add -A && git commit -m "<commit message from Step 4>"
 **Important**: Only use the commit message. Do NOT add Co-Authored-By or any other trailer. **Do not tag, do not merge, do not touch the main branch** — the release lands through a pull request.
 
 ## Step 10: Push the branch and open the pull request
+
+Dispatch push and PR creation to `release-worker`. Dispatch `release-verifier` to inspect the
+resulting PR metadata and URL before reporting it.
 
 ```bash
 git push -u origin <feature-branch>

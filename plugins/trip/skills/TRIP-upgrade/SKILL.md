@@ -1,14 +1,16 @@
 ---
 name: TRIP-upgrade
-description: Migrate a project whose TRIP skills were customized in place onto the plugin model — extract customizations into docs/TRIP.md and delete the local skill copies
+description: Upgrade an existing TRIP project—migrate legacy customized skill copies onto the plugin model, or add missing agent-routing configuration to an existing docs/TRIP.md profile
 disable-model-invocation: true
 ---
 
 # TRIP Upgrade Mode
 
-Migrate a project that carries its own **customized copies** of the TRIP skills under
-`.claude/skills/` onto the plugin model, where the skills are installed read-only and every
-project specific lives in `docs/TRIP.md`.
+Upgrade either kind of existing TRIP project:
+
+1. **Legacy migration** — move customized `.claude/skills/TRIP-*` copies onto the plugin model.
+2. **Profile migration** — add the current agent-routing schema to an existing `docs/TRIP.md`
+   created by an earlier plugin version.
 
 Run this once per project. Afterwards, upgrading TRIP is `claude plugin update trip` and nothing
 else — which is the entire point.
@@ -26,11 +28,49 @@ The customizations move into the project once, and the skeleton stops being the 
 ## Prerequisites
 
 - The `trip` plugin is installed (`/plugin install trip@hjarenas-agentic-skills`).
-- The project has `.claude/skills/TRIP-*` directories from an older setup.
+- The project has either `docs/TRIP.md` or `.claude/skills/TRIP-*` from an older setup.
 - The working tree is clean, so the migration is a reviewable diff.
 
-If there are no local `TRIP-*` skills, there is nothing to migrate — the project is already on
-the plugin model, or was never initialized. Point at `/TRIP-init` and stop.
+If neither source exists, the project was never initialized. Point at `/TRIP-init` and stop.
+
+## Phase 0: Select the migration path
+
+Inspect without modifying:
+
+```bash
+test -f docs/TRIP.md && grep -n '^## Agent routing$' docs/TRIP.md
+ls -d .claude/skills/TRIP-*/ 2>/dev/null
+test -f .codex/config.toml && sed -n '/^model\|^model_reasoning_effort/p' .codex/config.toml
+```
+
+Choose exactly one path:
+
+| State | Path |
+| :--- | :--- |
+| Legacy skills exist | Run the full migration, including routing in Phase 3.1 |
+| `docs/TRIP.md` exists and lacks `## Agent routing` | Run **Profile-only routing migration** below |
+| `docs/TRIP.md` already has `## Agent routing` and no legacy skills exist | Report "already current" and stop without edits |
+| Neither exists | Point at `/TRIP-init` and stop |
+
+Never replace or normalize an existing `Agent routing` section automatically. User choices in
+that table are project configuration and must be preserved byte-for-byte unless the user asks
+to change them.
+
+### Profile-only routing migration
+
+1. Read `docs/TRIP.md` and `.codex/config.toml` if present.
+2. Insert `## Agent routing` immediately after `## Commands` and its table, using the current
+   table from `TRIP-init` Phase 4.
+3. Keep all harness defaults unchanged. If `.codex/config.toml` contains `model` or
+   `model_reasoning_effort`, copy those values into the `plan-reviewer`, `implementer`, and
+   `code-reviewer` rows so the effective Codex selection becomes explicit. Do not remove or edit
+   `.codex/config.toml`; other Codex use may still depend on it.
+4. Verify that every required role appears exactly once and that all pre-existing
+   `docs/TRIP.md` content is otherwise unchanged.
+5. Show the diff and report the inherited model/effort values. Do not commit unless requested.
+
+This path is idempotent: a second `/TRIP-upgrade` sees the section and exits without edits.
+After completing it, skip Phases 1-6 and use the routing items in the post-migration checklist.
 
 ---
 
@@ -123,6 +163,10 @@ Write the profile using the template in `TRIP-init` Phase 4, filled from the ext
 | `TUTORIAL_CONFIG` | § Tutorials |
 | `CUSTOM_PLAN_SECTIONS` | § Custom plan sections |
 
+Include `## Agent routing` from the current `TRIP-init` profile template. If the extracted or
+existing `.codex/config.toml` has a model/effort value, make it explicit in the
+`plan-reviewer`, `implementer`, and `code-reviewer` rows while preserving the config file.
+
 Fill § Project's **Architecture** row with `docs/ARCHI.md (un-migrated)` if the project still has
 a monolith — Phase 5 offers to fix that.
 
@@ -206,6 +250,8 @@ works against the monolith.
 
 - [ ] Every customization extracted and accounted for (Phase 4 walk)
 - [ ] `docs/TRIP.md` written, no `<placeholder>` remaining
+- [ ] `docs/TRIP.md` has exactly one complete `Agent routing` table
+- [ ] Existing routing choices preserved, or Codex model/effort inherited without deleting `.codex/config.toml`
 - [ ] `docs/3-code-review/checklist.md` and `cr-template.md` in place, section names matching
 - [ ] Tuned Codex model/effort moved to `.codex/config.toml`
 - [ ] Local `TRIP-*` and `codex-*` skill copies removed, in their own commit

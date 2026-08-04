@@ -20,11 +20,17 @@ Before implementing:
 
 Implement: $ARGUMENTS
 
+## Operating model
+
+Read and obey [the agent routing contract](../../references/agent-routing.md). Parse routing
+overrides from `$ARGUMENTS`, then treat the remainder as the plan or feature. You are a pure
+orchestrator. There are no trivial-change or small-fix exceptions.
+
 ---
 
 ## Step 0: Create a Branch (Pre-Implementation)
 
-**Always** work on a dedicated branch — no need to ask. `TRIP-3-release` merges it back into the main branch with fast-forward, keeping a single clean linear history.
+**Always** work on a dedicated branch. Dispatch `workspace-worker` for every branch operation.
 
 `TRIP-1-plan` now creates and pushes this branch (with the plan doc as its first commit) as soon as the plan is approved, so the common case is that it **already exists**:
 
@@ -39,11 +45,14 @@ If already on the correct dedicated branch for this work (e.g., resuming a sessi
 
 ---
 
-## Implementation Phase — Delegate to Codex
+## Implementation Phase — Delegate to the configured workers
 
-You do NOT write the implementation yourself — delegate it to Codex via the `codex-implement` skill. (Exception: trivial unplanned changes of a few lines may be done directly.)
+Dispatch all implementation to the configured `implementer`. For `codex-bridge`, use the
+`codex-implement` skill with explicit model/effort overrides. Other harnesses receive the same
+batch scope and completion contract.
 
-Delegation is **batched**: Codex implements a few of the plan's checkboxes per turn, you review and fix each batch, then request the next one with your corrections attached. Same persistent thread throughout — context and conventions compound across turns.
+Delegation is **batched**: the implementer handles a few checkboxes per turn, an independent
+batch reviewer checks them, and a fixer handles corrections. Carry explicit notes between turns.
 
 ### 1. Read the plan and decide the batches
 
@@ -54,7 +63,8 @@ Read the plan fully and split its to-dos into batches. You are the judge of batc
 - Size by risk: novel, architectural, or security-critical work → small batches (down to one checkbox). Mechanical, repetitive work → larger batches.
 - Never span phase boundaries.
 - **One-shot escape hatch**: a low-risk plan (or phase) of ≤3-4 checkboxes is delegated whole — no batching ceremony.
-- **Filter out non-Codex items**: checkboxes needing human input, dashboard/console access, credentials, or ops actions are yours — resolve them with the user before or between batches, never delegate them.
+- **Filter out blocked items**: checkboxes needing human input, dashboard access, credentials, or
+  expanded authority must be raised with the user; the orchestrator coordinates but does not execute them.
 
 ### 2. Delegate batch by batch
 
@@ -84,27 +94,32 @@ the notes instead.
 
 ### 3. Review each batch (delta review)
 
-After each Codex report, before requesting the next batch:
+After each implementer report, before requesting the next batch:
 
-1. **Review the delta**: `git status -s && git diff` for the raw change, plus `detect_changes_tool` (risk-scored analysis) and `get_affected_flows_tool` (impacted execution paths) from code-review-graph — worktree vs index shows just this batch, since previous batches are staged (step 4). Check it against the plan, the patterns documented in the wiki pages you read in Prerequisites, and project conventions (DRY, KISS, comment discipline, error-handling and naming conventions).
-2. **Fix problems directly yourself** — no back-and-forth with Codex over fixes. What you fixed and why becomes the `--notes` of the next resume.
-3. **Micro-gate**: run the lint and typecheck/build commands from the Testing Gate (fast checks only — tests wait for the gate itself). Fix failures now.
-4. **Checkpoint**: `git add -A` — stage the reviewed batch so the next delta review starts clean. No commits — history stays clean for release.
-5. Verify the plan checkboxes Codex ticked match what the diff actually contains; cross any it completed but missed.
+1. **Prepare delta inputs**: have `workspace-worker` capture `git status -s && git diff`; give
+   that raw delta to `batch-reviewer`, which also runs graph change/flow analysis and checks the
+   plan, documented patterns, and project conventions.
+2. Dispatch `batch-reviewer` read-only for the raw delta and graph impact. Require findings with file/line evidence and a verdict.
+3. If findings exist, dispatch `fixer`; then dispatch `batch-reviewer` again to verify the corrections. Never let the implementer approve its own batch.
+4. Dispatch `test-worker` for the lint and typecheck/build micro-gate. Route failures to `fixer`, then rerun `test-worker`.
+5. Dispatch a worker to stage the reviewed batch with `git add -A`. No commits — history stays clean for release.
+6. Have `batch-reviewer` verify completed plan checkboxes against the diff; have `planner` update missed checkbox state.
 
 **Adapt as you go**: clean batch → grow the next one; heavy corrections → shrink the next one and spell out the fix pattern in the notes. If Codex ignores notes or repeats corrected mistakes late in a long session, reset the thread at the next batch boundary — the plan file plus a summary note rebuilds context.
 
 ### 4. Final pass
 
-After the last batch, read the **full feature diff** once (`git diff HEAD`), and run `get_impact_radius_tool`/`get_affected_flows_tool` on the changed modules for the full-feature blast radius. Batch reviews catch local issues; this pass catches cross-batch drift — duplicated helpers, divergent naming, dead code left by course corrections. Fix directly.
+After the last batch, dispatch `batch-reviewer` for the **full feature diff** and full-feature
+blast radius. Route corrections to `fixer`, then re-review until clean.
 
-The testing gate and Codex code review run **once**, after the final pass — never per batch. Proceed to the testing gate once you consider the implementation good for review.
+The full testing gate and independent code review run **once**, after the final pass — never per batch.
 
 ---
 
 ## Testing Gate
 
-After implementation, before the Codex review loop. Any failure here blocks the loop from starting.
+After implementation, before the code-review loop. Dispatch the entire gate to `test-worker`.
+Route failures to `fixer` and rerun the gate. Any failure blocks review.
 
 ### 1. Lint, type-check & build
 
@@ -137,7 +152,8 @@ project-specific skill that performs the verification.
 
 ### 4. Author missing tests
 
-If the change adds new logic, write its tests **now**, guided by the plan's **Test Impact** section and the project's testing guide (see `TRIP-test`). If no new logic was added, skip this step.
+If the change adds new logic, instruct `test-worker` to write its tests **now**, guided by the
+plan's **Test Impact** section and `TRIP-test`. If no new logic was added, skip this step.
 
 **Hard-to-cover code policy:**
 
@@ -154,13 +170,15 @@ Fix failures before starting the loop.
 
 ---
 
-## Codex Code Review
+## Independent Code Review
 
-Always run the Codex code review after the testing gate passes — no confirmation needed.
+Always dispatch the configured `code-reviewer` after the testing gate passes. It must be
+independent from the implementer, batch reviewer, fixer, and test worker.
 
 ### Loop
 
-1. **Start**: invoke the `codex-code-review` skill with the plan path and the testing-gate summary:
+1. **Start**: dispatch `code-reviewer` with the plan path and testing-gate summary. For
+   `codex-bridge`, invoke `codex-code-review` with explicit model/effort overrides:
    ```
    codex-code-review <plan-path> $GATE_SUMMARY
    ```
@@ -168,9 +186,12 @@ Always run the Codex code review after the testing gate passes — no confirmati
 
 2. **Parse trailing tag**: `APPROVED` -> synthesize. `NEEDS_REWORK` -> surface to user. `REQUEST_CHANGES` -> continue.
 
-3. **Address findings** — quote each with `file:line`, read the actual code, fix legitimate ones, push back on incorrect ones. Critical/Major block approval; Minor/Suggestion are case-by-case.
+3. **Address findings** — dispatch `fixer` with each evidenced finding. Send disputed findings
+   to a fresh `code-reviewer` assignment with the rationale; the orchestrator does not adjudicate
+   the code itself. Critical/Major findings block approval.
 
-4. **Write implementer notes** (1-3 sentences): which findings you fixed, which you pushed back on and why, any user decisions or environment limitations Codex should stop re-flagging.
+4. **Build worker notes** from the fixer and reviewer reports: fixes made, disputed findings and
+   why, plus user decisions or environment limitations the reviewer should not re-flag.
 
 5. **Resume** (re-run the testing gate first — lint, typecheck, affected tests — and build a fresh summary): invoke `codex-code-review` again with the same target, passing the notes and the fresh gate summary. The skill detects the stored review and switches to its resume prompt.
    Loop to step 2.
@@ -195,7 +216,9 @@ Edge cases:
 
 ### Operating Notes
 
-Surface reviews verbatim. Keep edits scoped. If Codex repeats a finding, re-read carefully — you likely addressed an adjacent concern, or you omitted the notes that told it the matter was settled. Reset only if the review context is confused. The testing gate (lint, typecheck, affected tests) must pass before APPROVED.
+Surface reviews verbatim. Keep fixer edits scoped. If a reviewer repeats a finding, dispatch a
+fresh `batch-reviewer` to determine whether the fix addressed an adjacent concern or the notes
+were incomplete. The testing gate must pass before APPROVED.
 
 Every Codex turn is a fresh run whose only memory is what the prompt carries, so the implementer notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
 
