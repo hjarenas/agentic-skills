@@ -58,7 +58,7 @@ dependency: none of these plugins require it, and it isn't declared in any `plug
 | :--- | :--- | :--- |
 | **trip** | `TRIP-init` `TRIP-1-plan` `TRIP-2-implement` `TRIP-3-release` `TRIP-review` `TRIP-test` `TRIP-research` `TRIP-hotfix` `TRIP-auto` `TRIP-upgrade` `TRIP-compact` | Plan → Implement → Review → Test, with versioned docs, changelog and release ceremony |
 | **trip-wiki** | `wiki-init` `wiki-migrate` `wiki-ingest` `wiki-query` `wiki-lint` | Architecture memory as atomic linked pages under `docs/archi/` |
-| **codex-bridge** | `codex-plan-review` `codex-code-review` `codex-implement` `codex-ask` | TRIP's own Codex prompts, run through the OpenAI Codex plugin's runtime |
+| **codex-bridge** | `codex-plan-review` `codex-code-review` `codex-implement` `codex-batch-review` `codex-fix` `codex-test` `codex-workspace` `codex-release` `codex-release-verify` `codex-ask` | TRIP worker roles and second opinions, run through the OpenAI Codex plugin's runtime |
 | **pocock-core** | `grill-with-docs` `to-spec` `to-tickets` `triage` `teach` `writing-great-skills` `research` `wayfinder` (+3 deps) | Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) |
 | **toolbox** | `commit` `AskUserQuestion` + 4 short commands | Standalone helpers; `commit` enforces Conventional Commits and bans AI attribution trailers |
 

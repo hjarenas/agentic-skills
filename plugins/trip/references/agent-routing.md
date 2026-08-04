@@ -73,8 +73,8 @@ Supported harness values:
 
 - `subagent`: launch a native harness sub-agent and include the selected model/effort when the
   harness supports those fields.
-- `codex-bridge`: invoke the matching `codex-*` skill. Pass model/effort as explicit per-run
-  overrides to its runtime; do not mutate `.codex/config.toml`.
+- `codex-bridge`: invoke the role mapping below. Pass model/effort as explicit per-run overrides;
+  do not mutate `.codex/config.toml`.
 - `skill:<name>`: invoke the named installed worker skill, including the role, artifact, scope,
   completion contract, and requested model/effort in the assignment.
 
@@ -92,6 +92,48 @@ Allow multiple overrides. Strip them from the task before dispatch. Precedence i
 
 Reject an unknown role or harness with a clear error. If a requested model is unavailable in the
 selected harness, ask the user to choose another model or harness; never substitute silently.
+
+### Codex bridge role mapping
+
+| Role | Skill | Access | Completion tags |
+| :--- | :--- | :--- | :--- |
+| plan-reviewer | `codex-plan-review` | read-only | `APPROVED`, `REQUEST_CHANGES`, `NEEDS_REWORK` |
+| implementer | `codex-implement` | write | `IMPLEMENTATION_COMPLETE`, `IMPLEMENTATION_PARTIAL` |
+| batch-reviewer | `codex-batch-review` | read-only | `BATCH_APPROVED`, `BATCH_REQUEST_FIXES` |
+| fixer | `codex-fix` | write | `FIX_COMPLETE`, `FIX_PARTIAL` |
+| test-worker | `codex-test` | write | `TESTS_GREEN`, `TESTS_RED` |
+| code-reviewer | `codex-code-review` | read-only | `APPROVED`, `REQUEST_CHANGES`, `NEEDS_REWORK` |
+| workspace-worker | `codex-workspace` | restricted write | `WORKSPACE_COMPLETE`, `WORKSPACE_BLOCKED` |
+| release-worker | `codex-release` | restricted write | `RELEASE_COMPLETE`, `RELEASE_BLOCKED` |
+| release-verifier | `codex-release-verify` | read-only | `RELEASE_APPROVED`, `RELEASE_REQUEST_CHANGES` |
+
+`discovery` and `planner` intentionally have no Codex bridge mapping: their default `subagent`
+harness keeps repository discovery and user-facing planning in the primary harness. Selecting
+`codex-bridge` for either is an unsupported routing error; use `subagent` or `skill:<name>`.
+
+For every bridge call, use a role-specific state target such as `<plan>#batch-review-2` or
+`<plan>#test-full-r1`. The bridge stores output by target; reusing the bare plan path across roles
+can overwrite another worker's report.
+
+### Codex-heavy preset
+
+Use this opt-in profile when Claude Opus should own discovery/planning and Codex should own every
+downstream worker role. `opus` is the native Claude harness alias; the Codex values are runtime
+model IDs.
+
+| Role | Harness | Model | Effort |
+| :--- | :--- | :--- | :--- |
+| discovery | subagent | opus |  |
+| planner | subagent | opus |  |
+| plan-reviewer | codex-bridge | gpt-5.6-sol |  |
+| implementer | codex-bridge | gpt-5.6-luna |  |
+| batch-reviewer | codex-bridge | gpt-5.6-sol |  |
+| fixer | codex-bridge | gpt-5.6-terra |  |
+| test-worker | codex-bridge | gpt-5.6-luna |  |
+| code-reviewer | codex-bridge | gpt-5.6-sol |  |
+| workspace-worker | codex-bridge | gpt-5.6-luna |  |
+| release-worker | codex-bridge | gpt-5.6-luna |  |
+| release-verifier | codex-bridge | gpt-5.6-luna |  |
 
 ## Dispatch contract
 

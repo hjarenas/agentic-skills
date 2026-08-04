@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "trip",
   "displayName": "TRIP Workflow",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Plan / Implement / Review / Test workflow with versioned docs, changelog and release ceremony.",
   "author": {
     "name": "hjarenas",

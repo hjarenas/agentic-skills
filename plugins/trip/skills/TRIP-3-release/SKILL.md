@@ -46,9 +46,10 @@ Any failure blocks the release — fix or return to `TRIP-2-implement` first.
 
 ## Steps 1-8: Prepare release artifacts
 
-Dispatch `release-worker` with the plan, `docs/TRIP.md`, approved review, and Steps 1-8 below.
+Dispatch `release-worker` (`codex-release` for `codex-bridge`) with the plan, `docs/TRIP.md`,
+approved review, and Steps 1-8 below.
 It owns every file edit and command in these steps. When it reports completion, dispatch
-`release-verifier` read-only to check versions, placeholders, changelog links, wiki lint, README,
+`release-verifier` (`codex-release-verify`) read-only to check versions, placeholders, changelog links, wiki lint, README,
 branch safety, and the full diff. Route corrections back to `release-worker`, then re-verify.
 
 ### Step 1: Get Current Date/Week

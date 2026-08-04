@@ -99,10 +99,13 @@ After each implementer report, before requesting the next batch:
 1. **Prepare delta inputs**: have `workspace-worker` capture `git status -s && git diff`; give
    that raw delta to `batch-reviewer`, which also runs graph change/flow analysis and checks the
    plan, documented patterns, and project conventions.
-2. Dispatch `batch-reviewer` read-only for the raw delta and graph impact. Require findings with file/line evidence and a verdict.
-3. If findings exist, dispatch `fixer`; then dispatch `batch-reviewer` again to verify the corrections. Never let the implementer approve its own batch.
-4. Dispatch `test-worker` for the lint and typecheck/build micro-gate. Route failures to `fixer`, then rerun `test-worker`.
-5. Dispatch a worker to stage the reviewed batch with `git add -A`. No commits — history stays clean for release.
+2. Dispatch `batch-reviewer` read-only for the raw delta and graph impact. For `codex-bridge`,
+   invoke `codex-batch-review`. Require `BATCH_APPROVED` before continuing.
+3. If findings exist, dispatch `fixer` (`codex-fix` for `codex-bridge`); then dispatch the batch
+   reviewer again. Never let the implementer approve its own batch.
+4. Dispatch `test-worker` (`codex-test`) for the micro-gate. Route `TESTS_RED` to the fixer, then rerun.
+5. Dispatch `workspace-worker` (`codex-workspace`) to stage the reviewed batch with `git add -A`.
+   Require `WORKSPACE_COMPLETE`. No commits — history stays clean for release.
 6. Have `batch-reviewer` verify completed plan checkboxes against the diff; have `planner` update missed checkbox state.
 
 **Adapt as you go**: clean batch → grow the next one; heavy corrections → shrink the next one and spell out the fix pattern in the notes. If Codex ignores notes or repeats corrected mistakes late in a long session, reset the thread at the next batch boundary — the plan file plus a summary note rebuilds context.
@@ -118,7 +121,8 @@ The full testing gate and independent code review run **once**, after the final 
 
 ## Testing Gate
 
-After implementation, before the code-review loop. Dispatch the entire gate to `test-worker`.
+After implementation, before the code-review loop. Dispatch the entire gate to `test-worker`
+(`codex-test` for `codex-bridge`).
 Route failures to `fixer` and rerun the gate. Any failure blocks review.
 
 ### 1. Lint, type-check & build
