@@ -12,7 +12,7 @@ You are now in **implementation mode** for **this project**.
 
 Before implementing:
 
-0. Read `docs/TRIP.md` — this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, run `/TRIP-init` first (or, for a project set up before TRIP became a plugin, `/TRIP-upgrade`).
+0. `docs/TRIP.md` must already exist — read it first. It is this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, stop immediately and tell the user to run `/TRIP-init` first (or `/TRIP-upgrade` for a project set up before TRIP became a plugin). Do not improvise a profile inline — see `TRIP-1-plan`'s Prerequisites for why.
 1. Read `docs/archi/index.md` in full, then open the wiki pages covering the area the plan touches and follow their `[[links]]` one hop — documented architecture, rationale, and conventions. (Un-migrated projects: read `docs/ARCHI.md` in full instead.)
 2. Query the code-review-graph MCP tools for the plan's target area: `get_minimal_context(task="<feature summary>")`, then `semantic_search_nodes`/`query_graph` (`callers_of`/`imports_of`) on the files the plan will touch, so you know the real current callers/dependents before changing them. Use `detail_level="minimal"`.
 
@@ -127,6 +127,8 @@ Route failures to `fixer` and rerun the gate. Any failure blocks review.
 
 ### 1. Lint, type-check & build
 
+Hand these to `test-worker` — do not run them in the orchestrator context yourself:
+
 ```bash
 # Commands come from docs/TRIP.md § Commands — read it first.
 <lint command — docs/TRIP.md § Commands> 2>&1 | tee /tmp/_trip2-lint.txt
@@ -135,11 +137,13 @@ Route failures to `fixer` and rerun the gate. Any failure blocks review.
 
 ### 2. Run affected unit tests
 
+Also `test-worker`'s command, not yours:
+
 ```bash
 <test command — docs/TRIP.md § Commands> <pattern-for-affected-files>
 ```
 
-Only the files/areas the change touched — never the full suite by default.
+Only the files/areas the change touched — never the full suite by default. If a failure here looks infra-related rather than caused by the change (flaky fixture, unexpected interaction between the narrowed set of tests), have `test-worker` cross-check it against a full-suite run before it blocks the gate — a narrow invocation can surface a pre-existing issue the full suite masks or resolves differently.
 
 ### 3. Integration impact check
 

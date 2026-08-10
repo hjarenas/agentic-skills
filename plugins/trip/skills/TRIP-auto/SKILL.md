@@ -64,7 +64,7 @@ Invoke `TRIP-3-release` as the release orchestrator. On the feature branch (neve
 `release-worker` performs these tasks and its independent `release-verifier` checks them:
 
 1. Date/week, SemVer bump in all version files (+ lockfiles), promote the Codex CR to `docs/3-code-review/CR_wa_vx.y.z.md`, changelog file + table, `/wiki-ingest` to fold the change into `docs/archi/`, README version.
-2. Invoke `/wiki-lint` and fix the mechanical findings (broken links, index gaps, `links:` drift). Leave judgement calls — contradictions, stale claims, pages wanting a split — for the PR description's Decisions section rather than resolving them unattended.
+2. Invoke `/wiki-lint --fix` and address the mechanical findings (broken links, index gaps, `links:` drift). Leave judgement calls — contradictions, stale claims, pages wanting a split — for the PR description's Decisions section rather than resolving them unattended.
    Un-migrated projects instead update `docs/ARCHI.md` per `docs/ARCHI-rules.md`.
 3. Commit everything on the feature branch with the one-line release message. **Do not tag, do not merge, do not touch the main branch.**
 

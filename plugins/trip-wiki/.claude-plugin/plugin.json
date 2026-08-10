@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "trip-wiki",
   "displayName": "TRIP Wiki",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Project memory as an LLM wiki: atomic linked pages under docs/archi/ instead of one monolithic ARCHI.md.",
   "author": {
     "name": "hjarenas",
