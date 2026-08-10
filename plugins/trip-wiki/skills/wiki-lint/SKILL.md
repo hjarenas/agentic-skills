@@ -1,7 +1,6 @@
 ---
 name: wiki-lint
 description: Check the architecture wiki for broken links, orphans, stale claims and contradictions, and repair what is safe to repair
-disable-model-invocation: true
 argument-hint: "[--fix]"
 ---
 

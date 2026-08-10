@@ -147,12 +147,10 @@ anything new, splits any page that outgrew the size limit, fixes cross-reference
 Before ingesting, cross-check with the code-review-graph MCP tools — `get_architecture_overview`
 and `list_communities` — so the ingest knows about any module the diff alone would not reveal.
 
-`wiki-lint` is user-invocation-only (`disable-model-invocation: true`) — it cannot be dispatched
-via the Skill tool from this workflow, and there is no reliable cross-plugin path to call its
-script by hand either (`${CLAUDE_PLUGIN_ROOT}` from this skill does not reach `trip-wiki`'s cache
-directory). Do not attempt to invoke it or replicate its checks yourself. Instead add
-`- [ ] Run /wiki-lint` to the PR's "After merging" checklist (template in `TRIP-auto` Phase 4) so
-the user runs it after merging.
+Invoke the `wiki-lint` skill with `--fix` and fix anything cheap. Do not try to call its script by
+path from here — each plugin is installed in its own cache directory, so `${CLAUDE_PLUGIN_ROOT}`
+from this skill does not reach `trip-wiki`. Invoking the skill by name is the supported way across
+plugins.
 
 There is no size warning to heed here: pages are split, not compacted, so the wiki does not have
 a token ceiling to breach. A page that grew too large is a lint finding, not a release blocker.
