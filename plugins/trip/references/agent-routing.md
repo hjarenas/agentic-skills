@@ -72,7 +72,11 @@ harness default.
 Supported harness values:
 
 - `subagent`: launch a native harness sub-agent and include the selected model/effort when the
-  harness supports those fields.
+  harness supports those fields. Use `general-purpose` as the subagent type for every role unless
+  the invocation overrides it — never `Explore` or another narrow read-only search agent: its own
+  description disqualifies it for open-ended discovery, design-doc auditing, and cross-file
+  consistency work, and write-capable roles (`implementer`, `fixer`, `workspace-worker`,
+  `release-worker`, …) need write access it does not have.
 - `codex-bridge`: invoke the role mapping below. Pass model/effort as explicit per-run overrides;
   do not mutate `.codex/config.toml`.
 - `skill:<name>`: invoke the named installed worker skill, including the role, artifact, scope,

@@ -18,8 +18,30 @@ orchestrator: all discovery, plan writing, and review work must be performed by 
 
 Before dispatching planning workers:
 
-0. Read `docs/TRIP.md`, including `Agent routing`. If it is missing, run `/TRIP-init` first (or `/TRIP-upgrade`).
-1. Dispatch `discovery` to read the relevant wiki pages and query the code-review graph. Require an evidence report including drift, impacted files, callers, conventions, and unknowns.
+0. `docs/TRIP.md` must already exist — read it first, including `Agent routing`. If it is missing,
+   stop immediately and tell the user to run `/TRIP-init` first (or `/TRIP-upgrade` for a project
+   set up before TRIP became a plugin). Do not improvise a profile inline: a bootstrapped
+   `docs/TRIP.md` skips `TRIP-init`'s review-checklist, changelog-table, and TESTING.md setup, and
+   defaults decisions that `AskUserQuestion` should be asking about.
+1. Dispatch `discovery` (read-only) with a concrete assignment, not just the feature request:
+
+   ```
+   Discovery assignment — <feature request>
+
+   1. Read docs/archi/index.md in full, then the wiki pages covering the affected area,
+      following [[links]] one hop. (Un-migrated projects: read docs/ARCHI.md in full instead.)
+   2. Query code-review-graph: get_minimal_context(task="<feature summary>"), then
+      semantic_search_nodes / query_graph (callers_of/imports_of) on the files this will
+      likely touch.
+   3. If the code-review-graph MCP tools are unavailable, say so explicitly in the report —
+      do not silently fall back to file reads only; a missing tool is a coverage gap the
+      planner and reviewer need to know about, not something to paper over.
+
+   Report: wiki-vs-code drift, impacted files, real current callers/dependents, documented
+   conventions, and open unknowns.
+   ```
+
+   Require that evidence report before dispatching `planner`.
 2. Dispatch `planner` with the feature request, profile, and discovery report. The planner owns clarification proposals and every plan-file edit.
 
 The wiki documents intent; the graph reflects the code as it actually is. If they disagree (undocumented module, stale pattern), note the drift in the plan rather than silently trusting one over the other — and add a to-do to run `/wiki-ingest` after the work lands.

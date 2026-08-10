@@ -22,10 +22,17 @@ This skill runs after `TRIP-2-implement` has converged (implementation done, tes
 
 ## Prerequisites
 
+- `docs/TRIP.md` exists and has been read (it carries the version file, week anchor, main branch,
+  and commands every step below needs). If it is missing, stop immediately and tell the user to
+  run `/TRIP-init` first (or `/TRIP-upgrade` for a project set up before TRIP became a plugin) —
+  do not improvise a profile inline.
 - Implementation complete and user-confirmed.
 - Testing gate green: affected unit tests pass.
 - Codex code review converged (`APPROVED`), or explicitly skipped by the user.
 - Lint and type-check/build green.
+- Local infra required by pre-commit/pre-push hooks (`docs/TRIP.md` § Integration checks), if
+  any, is running — a hook-triggered full test/E2E run can otherwise fail deep into Step 10's
+  push instead of here, where it is cheaper to catch.
 
 ### Standalone verification (fresh session, not chained from TRIP-2)
 
@@ -54,10 +61,14 @@ branch safety, and the full diff. Route corrections back to `release-worker`, th
 
 ### Step 1: Get Current Date/Week
 
-Run this command to get date and project week:
+`<week anchor — docs/TRIP.md § Project>` must be in `YYYY-MM-DD` format for `date -d` to parse
+reliably. Validate before using it — a malformed anchor (e.g. a legacy profile stored as
+`DD-MM-YYYY`) should fail here with a clear message, not cascade into a bash arithmetic error:
 
 ```bash
-date '+%d-%m-%Y %H:%M' && echo "Project week: $(( ( $(date +%s) - $(date -d '<week anchor — docs/TRIP.md § Project>' +%s) ) / 604800 + 1 ))"
+WEEK_ANCHOR="<week anchor — docs/TRIP.md § Project>"
+date -d "$WEEK_ANCHOR" >/dev/null || { echo "docs/TRIP.md week anchor '$WEEK_ANCHOR' is not YYYY-MM-DD — fix it in docs/TRIP.md before continuing"; exit 1; }
+date '+%d-%m-%Y %H:%M' && echo "Project week: $(( ( $(date +%s) - $(date -d "$WEEK_ANCHOR" +%s) ) / 604800 + 1 ))"
 ```
 
 Use the project week in all subsequent steps.
@@ -136,9 +147,12 @@ anything new, splits any page that outgrew the size limit, fixes cross-reference
 Before ingesting, cross-check with the code-review-graph MCP tools — `get_architecture_overview`
 and `list_communities` — so the ingest knows about any module the diff alone would not reveal.
 
-Then invoke the `wiki-lint` skill and fix anything cheap. Do not try to call its script by path
-from here — each plugin is installed in its own cache directory, so `${CLAUDE_PLUGIN_ROOT}` from
-this skill does not reach `trip-wiki`. Invoking the skill is the supported way across plugins.
+`wiki-lint` is user-invocation-only (`disable-model-invocation: true`) — it cannot be dispatched
+via the Skill tool from this workflow, and there is no reliable cross-plugin path to call its
+script by hand either (`${CLAUDE_PLUGIN_ROOT}` from this skill does not reach `trip-wiki`'s cache
+directory). Do not attempt to invoke it or replicate its checks yourself. Instead add
+`- [ ] Run /wiki-lint` to the PR's "After merging" checklist (template in `TRIP-auto` Phase 4) so
+the user runs it after merging.
 
 There is no size warning to heed here: pages are split, not compacted, so the wiki does not have
 a token ceiling to breach. A page that grew too large is a lint finding, not a release blocker.

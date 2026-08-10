@@ -11,6 +11,8 @@ You are now in **hotfix mode** - a streamlined workflow for urgent production fi
 
 > **Warning**: Only use this for genuine emergencies. For regular bugs, use the full TRIP workflow (`TRIP-1-plan` → `TRIP-2-implement`).
 
+This skill is intentionally exempt from [the agent routing contract](../../references/agent-routing.md)'s worker-dispatch boundary — for a genuine emergency, the orchestrator performs discovery, the fix, and git operations directly rather than paying the coordination cost of dispatching roles. It is **not** exempt from the PR-only rule the rest of TRIP follows (`TRIP-3-release`): a hotfix skips planning depth and review ceremony, never the PR gate. It lands through a pull request like everything else.
+
 ## Your Task
 
 Hotfix: $ARGUMENTS
@@ -110,19 +112,31 @@ git add -A && git commit -m "hotfix: [brief description]"
 
 ---
 
-## Step 8: Merge & Tag
+## Step 8: Push & Open Pull Request
 
 ```bash
-git checkout main
-git merge hotfix/[short-description]
-git tag vx.y.z
-git push && git push --tags
+git push -u origin hotfix/[short-description]
+gh pr create --base <main branch — docs/TRIP.md § Project> --title "hotfix: [brief description]" \
+  --body "Root cause: <from Step 3>. Fix: <from Step 4>. Verified: <from Step 5>."
+```
+
+Report the PR URL to the user. **Do not merge it yourself.** Flag the urgency to the user when
+reporting it back so they can prioritize the review — that is how a hotfix stays fast without
+skipping the one gate that catches a bad emergency fix before it reaches `main`.
+
+---
+
+## Step 9: Post-Merge Tag (after the user merges)
+
+```bash
+git checkout <main branch — docs/TRIP.md § Project> && git pull
+git tag vx.y.z && git push --tags
 git branch -d hotfix/[short-description]
 ```
 
 ---
 
-## Step 9: Post-Hotfix
+## Step 10: Post-Hotfix
 
 After the immediate crisis is resolved:
 
