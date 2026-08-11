@@ -94,7 +94,7 @@ compressed, so growth costs more files instead of less truth.
 - **Source**: [github.com/mattpocock/skills](https://github.com/mattpocock/skills) (MIT)
 - **Used in**: `pocock-core`
 - **Taken**: eight skills — `grill-with-docs`, `to-spec`, `to-tickets`, `triage`, `teach`,
-  `writing-great-skills`, `research`, `wayfinder` — plus three they depend on: `grilling`,
+  `writing-for-agents`, `research`, `wayfinder` — plus three they depend on: `grilling`,
   `domain-modeling`, and `setup-matt-pocock-skills`.
 
 **Why**: TRIP is strong from an agreed plan onward and weak before it. `TRIP-1-plan` asks a few
@@ -102,7 +102,7 @@ compressed, so growth costs more files instead of less truth.
 known, thin when it is not. Pocock's front end fills exactly that gap: `grilling` interviews one
 question at a time until the thinking holds, `to-spec` synthesises without re-interviewing,
 `to-tickets` cuts tracer-bullet slices, and `wayfinder` handles work too large for one session.
-`writing-great-skills` is the reference the skills in this repo are written against — its
+`writing-for-agents` is the reference the skills in this repo are written against — its
 distinction between model-invoked and user-invoked skills, and its framing of predictability as
 *process* rather than output, shaped the frontmatter choices throughout.
 

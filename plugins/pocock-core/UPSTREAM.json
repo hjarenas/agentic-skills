@@ -2,11 +2,11 @@
   "upstream": {
     "repo": "https://github.com/mattpocock/skills",
     "ref": "main",
-    "commit": "2ab958093e83e0ec752e6c1c5932da465bf23e0c",
-    "commit_date": "2026-07-28T10:18:17+01:00",
+    "commit": "84fdeffd12f2ee307994d1eb6feb48173b6e0502",
+    "commit_date": "2026-08-06T20:49:51+01:00",
     "license": "MIT"
   },
-  "vendored_at": "2026-07-31",
+  "vendored_at": "2026-08-11",
   "skills": [
     {
       "name": "domain-modeling",
@@ -69,10 +69,10 @@
       "reason": "explicitly requested"
     },
     {
-      "name": "writing-great-skills",
-      "upstream_dir": "skills/productivity/writing-great-skills",
+      "name": "writing-for-agents",
+      "upstream_dir": "skills/productivity/writing-for-agents",
       "requested": true,
-      "reason": "explicitly requested"
+      "reason": "explicitly requested (renamed upstream from writing-great-skills, itself renamed from write-a-skill)"
     }
   ],
   "files": [
@@ -109,12 +109,12 @@
     {
       "local": "plugins/pocock-core/skills/grilling/SKILL.md",
       "upstream": "skills/productivity/grilling/SKILL.md",
-      "sha256": "44331dda57f461db4fec3f2efb6ddabe7aaaa0a57ae0f88a883bc61aed8a0587"
+      "sha256": "fa5c1e5ee76b1c8f1ae56101f52c9e239de75d5c578adc61227b92d10b7e52ef"
     },
     {
       "local": "plugins/pocock-core/skills/grilling/agents/openai.yaml",
       "upstream": "skills/productivity/grilling/agents/openai.yaml",
-      "sha256": "cf29b9a8dbf35a58a908a6ca4f64dcd86c2b2130291eee0a78b9f706b138825b"
+      "sha256": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
     },
     {
       "local": "plugins/pocock-core/skills/research/SKILL.md",
@@ -129,7 +129,7 @@
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/SKILL.md",
       "upstream": "skills/engineering/setup-matt-pocock-skills/SKILL.md",
-      "sha256": "def265a8b15ffb8afc3f335d69e175ba9a7fe3991218984b0e49e8345cde3b20"
+      "sha256": "310fb1a73c0467e617e17d7c41d4a2278b5405c4a27f36d7cd22bb4599aee6bb"
     },
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/domain.md",
@@ -139,17 +139,17 @@
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-github.md",
       "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-github.md",
-      "sha256": "52e9f9f1ec0f6d47c6785ac500708ac0521f34abb4cc5475b5dc747165dab17e"
+      "sha256": "ec8332bb69e7e79e349989e940be481a0c79b552be3acc613e718278bcc5e03d"
     },
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-gitlab.md",
       "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-gitlab.md",
-      "sha256": "4470f2f64d015fba01af877233296b401bb0d44b5acb9572ffc3ff6b30e8de88"
+      "sha256": "16ea4a727803876cbc763e1f6b00992b3b393ba5e0cd394382dccc0f8d83c564"
     },
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/issue-tracker-local.md",
       "upstream": "skills/engineering/setup-matt-pocock-skills/issue-tracker-local.md",
-      "sha256": "ed6add9fe3cdcd2d1ebb2a463cf0eb6a1a86df500f4922b31a1ab50f15b3a705"
+      "sha256": "6f38f66f9ffce2fdc26c43608d06b527f60e45c6f43003d0ea77d4e2641c9de3"
     },
     {
       "local": "plugins/pocock-core/skills/setup-matt-pocock-skills/triage-labels.md",
@@ -194,7 +194,7 @@
     {
       "local": "plugins/pocock-core/skills/to-spec/SKILL.md",
       "upstream": "skills/engineering/to-spec/SKILL.md",
-      "sha256": "267638edd513b5918de626ad5605d261952abb7428cb308869c663ca924e93e7"
+      "sha256": "5d26479544b08048d3a8f79d937b39bc613a617f026b3fd083bafc1e99a7b811"
     },
     {
       "local": "plugins/pocock-core/skills/to-spec/agents/openai.yaml",
@@ -224,7 +224,7 @@
     {
       "local": "plugins/pocock-core/skills/triage/SKILL.md",
       "upstream": "skills/engineering/triage/SKILL.md",
-      "sha256": "d45827c299c021f77b0f146fefa3ee679b13f99e9a2ffdf48e8de2347adeefe1"
+      "sha256": "91e2817ecb688c4df4e2444eab472d1d79d2a0a57abf9f6726967664c460ff2e"
     },
     {
       "local": "plugins/pocock-core/skills/triage/agents/openai.yaml",
@@ -234,7 +234,7 @@
     {
       "local": "plugins/pocock-core/skills/wayfinder/SKILL.md",
       "upstream": "skills/engineering/wayfinder/SKILL.md",
-      "sha256": "257e40665b28ae959ffdcb97d7a72b074360f4a3d201bd84786505308546e434"
+      "sha256": "d33e2141f7c8bbfd137fef0213cbec465820e4680e67da5d0f0815d6742d26c2"
     },
     {
       "local": "plugins/pocock-core/skills/wayfinder/agents/openai.yaml",
@@ -242,19 +242,19 @@
       "sha256": "88bc81a11a6d52ac67aeaa76b8b619e387020d47c5133a4dd4927fd15c4ad073"
     },
     {
-      "local": "plugins/pocock-core/skills/writing-great-skills/GLOSSARY.md",
-      "upstream": "skills/productivity/writing-great-skills/GLOSSARY.md",
-      "sha256": "cccd684c73fb7a06f523497b0121765f92d2b33d6ef9c51602294849233451d6"
+      "local": "plugins/pocock-core/skills/writing-for-agents/SKILL.md",
+      "upstream": "skills/productivity/writing-for-agents/SKILL.md",
+      "sha256": "a842323e664e5af104eac5c97ad22fda929ebeb62d81c501161ac1f6f482db58"
     },
     {
-      "local": "plugins/pocock-core/skills/writing-great-skills/SKILL.md",
-      "upstream": "skills/productivity/writing-great-skills/SKILL.md",
-      "sha256": "4d6ccbc3760b1bd4107c495a79872286ea69494003f3b0a719fc95b147457061"
+      "local": "plugins/pocock-core/skills/writing-for-agents/SKILL-MECHANICS.md",
+      "upstream": "skills/productivity/writing-for-agents/SKILL-MECHANICS.md",
+      "sha256": "b4c54a0aaad3f6eddefde6d06770a0e401fbb8fc6a8f49ce18af816bd144d14d"
     },
     {
-      "local": "plugins/pocock-core/skills/writing-great-skills/agents/openai.yaml",
-      "upstream": "skills/productivity/writing-great-skills/agents/openai.yaml",
-      "sha256": "b3c555d2654ec61aed78f8435f583c6a0cd6bf980d71317724682ad20075c33d"
+      "local": "plugins/pocock-core/skills/writing-for-agents/agents/openai.yaml",
+      "upstream": "skills/productivity/writing-for-agents/agents/openai.yaml",
+      "sha256": "eacb24b2a618cfb81dacb0416f4fdd75ddf3a8060f8ddb99aae1b1e301907e4b"
     }
   ]
 }
