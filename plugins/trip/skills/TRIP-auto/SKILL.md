@@ -1,6 +1,7 @@
 ---
 name: TRIP-auto
 description: Coordinate the full TRIP cycle through configurable worker harnesses and models—plan, independent review, batched implementation, testing, code review, and release—ending in a pull request. The orchestrator delegates all work and pauses once for plan approval.
+disable-model-invocation: true
 argument-hint: "feature description or plan file"
 ---
 

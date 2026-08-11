@@ -1,6 +1,6 @@
 ---
 name: TRIP-3-release
-description: Release a completed implementation - version, code review promotion, changelogs, docs, commit, tag, ff-merge, push
+description: Release a completed implementation - version, code review promotion, changelogs, docs, commit, pull request, tag
 argument-hint: "plan file or feature label"
 ---
 

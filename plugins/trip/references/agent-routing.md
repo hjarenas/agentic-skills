@@ -111,6 +111,11 @@ selected harness, ask the user to choose another model or harness; never substit
 | release-worker | `codex-release` | restricted write | `RELEASE_COMPLETE`, `RELEASE_BLOCKED` |
 | release-verifier | `codex-release-verify` | read-only | `RELEASE_APPROVED`, `RELEASE_REQUEST_CHANGES` |
 
+Every codex-bridge role is **stateless**: each turn is a fresh process with no memory of earlier
+turns, so continuity travels only through `--notes` and the stored review/report each skill reads
+back in. Skills below say "stateless" and assume this definition — always pass `--notes` on
+resume, or the next turn re-raises findings already settled.
+
 `discovery` and `planner` intentionally have no Codex bridge mapping: their default `subagent`
 harness keeps repository discovery and user-facing planning in the primary harness. Selecting
 `codex-bridge` for either is an unsupported routing error; use `subagent` or `skill:<name>`.
