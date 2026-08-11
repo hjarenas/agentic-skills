@@ -10,3 +10,6 @@
 # Python bytecode
 __pycache__/
 *.pyc
+
+# Personal/machine-specific Claude Code settings (enabled plugins, local permissions)
+.claude/settings.local.json
