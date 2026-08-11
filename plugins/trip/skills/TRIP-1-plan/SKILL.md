@@ -199,7 +199,7 @@ Skip for trivial plans (single-file, low-risk). Run for non-trivial (new module,
    -> back to step 2.
 6. **Cap at 5 rounds** (or user-specified). Surface remaining findings and let user decide.
 
-The notes are not optional: each Codex turn is a fresh run that only knows what the prompt carries, so without them Codex re-raises findings you already settled.
+The notes are not optional: Codex is stateless, so without them it re-raises findings you already settled.
 
 Surface worker reviews verbatim. Keep planner edits scoped to findings. Reset persistent reviewer
 state only if genuinely confused.

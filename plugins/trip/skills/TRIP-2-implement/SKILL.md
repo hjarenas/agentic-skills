@@ -228,7 +228,7 @@ Surface reviews verbatim. Keep fixer edits scoped. If a reviewer repeats a findi
 fresh `batch-reviewer` to determine whether the fix addressed an adjacent concern or the notes
 were incomplete. The testing gate must pass before APPROVED.
 
-Every Codex turn is a fresh run whose only memory is what the prompt carries, so the implementer notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
+Codex is stateless, so the implementer notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
 
 ---
 
@@ -241,6 +241,6 @@ After Codex converges (or is skipped):
   - **Question**: "Is the implementation complete?"
   - **Options**: "Yes, everything is complete" (proceed to release), "No, there are remaining items" (continue working)
 
-**If "Yes"**: proceed directly into the release — invoke the `TRIP-3-release` skill and follow it in this session, passing the same plan path (or feature label). The release skill owns everything from version bump to the fast-forward merge and push.
+**If "Yes"**: proceed directly into the release — invoke the `TRIP-3-release` skill and follow it in this session, passing the same plan path (or feature label). The release skill owns everything from version bump to opening the pull request.
 
 **If "No"**: continue working, then repeat the sequence: testing gate → Codex review → this question.
