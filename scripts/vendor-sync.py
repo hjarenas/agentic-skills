@@ -58,7 +58,11 @@ def ensure_clone(repo_url: str) -> Path:
         if r.returncode:
             sys.exit(f"clone failed:\n{r.stderr}")
     else:
-        r = run(["git", "-C", str(clone), "fetch", "--all", "--tags", "--prune"])
+        # `--bare` clones set no fetch refspec, so plain `fetch --all` only
+        # downloads objects into FETCH_HEAD without advancing refs/heads/* —
+        # spell the refspecs out so branches (and tags) actually move.
+        r = run(["git", "-C", str(clone), "fetch", "origin",
+                 "+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*", "--prune"])
         if r.returncode:
             sys.exit(f"fetch failed:\n{r.stderr}")
     return clone
