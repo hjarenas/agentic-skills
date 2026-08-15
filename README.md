@@ -62,6 +62,12 @@ dependency: none of these plugins require it, and it isn't declared in any `plug
 | **pocock-core** | `grill-with-docs` `to-spec` `to-tickets` `triage` `teach` `writing-for-agents` `research` `wayfinder` (+3 deps) | Vendored from [mattpocock/skills](https://github.com/mattpocock/skills) |
 | **toolbox** | `commit` `AskUserQuestion` + 4 short commands | Standalone helpers; `commit` enforces Conventional Commits and bans AI attribution trailers |
 
+`trip` also ships 11 named subagents, one per worker role (`discovery`, `planner`,
+`plan-reviewer`, `implementer`, `batch-reviewer`, `fixer`, `test-worker`, `code-reviewer`,
+`workspace-worker`, `release-worker`, `release-verifier`), addressed as `trip:<role>` and scoped
+to that role's read/write boundary — see `plugins/trip/references/agent-routing.md` for the full
+routing contract.
+
 The TRIP skills stop and ask at their decision points via the **native** `AskUserQuestion` tool,
 so nothing extra is needed on Claude Code. `toolbox`'s `AskUserQuestion` skill is a shim for
 agents that lack that tool (Codex CLI, OpenCode, Mistral Vibe), where the instruction would

@@ -83,7 +83,7 @@ Use the project week in all subsequent steps.
 
 - If not already done in the plan phase, propose new SemVer version (x.y.z)
 - Update version in `<version file — docs/TRIP.md § Project>`
-- Do not modify anything else in this file
+- Change only the version field in this file
 
 ### Step 3: Promote Code Review
 
@@ -146,37 +146,24 @@ version you just bumped to:
 wiki-ingest <x.y.z>
 ```
 
-It reads the changelog and the diff for that version, updates the affected pages, adds pages for
-anything new, splits any page that outgrew the size limit, fixes cross-references, and writes
-`docs/archi/log/v<x.y.z>.md`.
+See that skill for what it does with the changelog and diff. Before invoking it, cross-check with
+the code-review-graph MCP tools — `get_architecture_overview` and `list_communities` — so the
+ingest knows about any module the diff alone would not reveal.
 
-Before ingesting, cross-check with the code-review-graph MCP tools — `get_architecture_overview`
-and `list_communities` — so the ingest knows about any module the diff alone would not reveal.
+Invoke the `wiki-lint` skill with `--fix` and fix anything cheap. Call it by name, not by
+constructing a path through `${CLAUDE_PLUGIN_ROOT}` — each plugin installs in its own cache
+directory, so a path built from this skill's root never reaches `trip-wiki`.
 
-Invoke the `wiki-lint` skill with `--fix` and fix anything cheap. Do not try to call its script by
-path from here — each plugin is installed in its own cache directory, so `${CLAUDE_PLUGIN_ROOT}`
-from this skill does not reach `trip-wiki`. Invoking the skill by name is the supported way across
-plugins.
-
-There is no size warning to heed here: pages are split, not compacted, so the wiki does not have
-a token ceiling to breach. A page that grew too large is a lint finding, not a release blocker.
+Pages split rather than compact, so a page growing large is a `wiki-lint` finding, not a release
+blocker.
 
 **Un-migrated projects** still have a monolithic `docs/ARCHI.md`. For those: read
 `docs/ARCHI-rules.md`, update `docs/ARCHI.md` following it, and consider running
 `/wiki-migrate` to stop paying this cost every release.
 
-<!-- Tutorials: include this step only if docs/TRIP.md § Tutorials says they are enabled.
-     When enabled, renumber the steps that follow (README becomes 9, Commit 10, and so on).
-### Step 8: Tutorial
-
-Create `docs/5-tuto/tuto_x.y.z.md` explaining the core principle.
-
-**User context for tutorials**:
-
-- Level: <level — docs/TRIP.md § Tutorials>
-- Learning focus: <focus — docs/TRIP.md § Tutorials>
-- Style: <style — docs/TRIP.md § Tutorials>
--->
+If `docs/TRIP.md` § Tutorials says tutorials are enabled, see `tutorial-step.md` in this skill's
+directory for Step 8 (and renumber the steps that follow: README becomes 9, Commit 10, and so on).
+Otherwise skip straight to:
 
 ### Step 8: README Update
 
