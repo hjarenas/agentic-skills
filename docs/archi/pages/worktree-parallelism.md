@@ -2,14 +2,15 @@
 title: Worktree parallelism
 status: current
 updated: 2026-08-15
-verified-at: 1.4.0
+verified-at: 1.5.0
 links: [trip-plugin, codex-bridge-plugin]
 ---
 
 TRIP flows and their implementation phases run in dedicated git worktrees rather than in the
 primary working tree, so concurrent flows and concurrent phases within one flow never share a
-mutable working directory. Introduced in [[trip-plugin]] 1.4.0
-(`docs/1-plans/F_0.2.0_trip-worktree-parallelism.plan.md`).
+mutable working directory. Introduced in [[trip-plugin]] 1.5.0
+(`docs/1-plans/F_0.2.0_trip-worktree-parallelism.plan.md`; bumps from 1.4.0, not the originally
+planned 1.3.0, because an unrelated named-per-role-subagents change merged first).
 
 ## Outer parallelism — one worktree per flow
 
