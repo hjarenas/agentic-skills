@@ -2,7 +2,7 @@
 title: trip plugin
 status: current
 updated: 2026-08-15
-verified-at: 1.4.0
+verified-at: 1.5.0
 links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
@@ -39,6 +39,21 @@ plan phase (declared via a `Depends on:` line) its own worktree branched off the
 running phase batch loops in parallel and merging them back one at a time. See
 [[worktree-parallelism]] for the full mechanism, including the serialized merge slot,
 conflict-in-place resolution, and the `TRIP-3-release` cleanup exception.
+
+## Named per-role subagents, not `general-purpose`
+
+Every worker role (`discovery`, `planner`, `plan-reviewer`, `implementer`, `batch-reviewer`,
+`fixer`, `test-worker`, `code-reviewer`, `workspace-worker`, `release-worker`,
+`release-verifier`) has its own subagent definition at `plugins/trip/agents/<role>.md`, addressed
+as `trip:<role>`. Each is scoped via `disallowedTools` to that role's read/write boundary from the
+Roles table below — read-only roles deny `Write`/`Edit`/`NotebookEdit`, all of them deny `Agent`
+(spawning further sub-dispatches stays an orchestrator-only privilege) — and each mandates the
+same completion tag its `codex-bridge` counterpart uses, so tag-parsing logic in the orchestrator
+skills is harness-agnostic. This replaced dispatching every role as the built-in `general-purpose`
+agent, which worked but flattened Claude Code's usage/analytics view into one undifferentiated
+bucket. An older cached `trip` install without these files yet fails a `trip:<role>` dispatch with
+an "Unknown agent" error — `agent-routing.md`'s upgrade note documents the recovery (retry that
+one call with `general-purpose`, then update and reload).
 
 ## The profile: `docs/TRIP.md`
 
