@@ -48,12 +48,12 @@ configured reviews, implementation batches, testing gates, or release-doc steps.
 2. **Clarifying questions**: at most ONE `AskUserQuestion` round, and only for decisions that genuinely change the design (data placement, exposure, locked-decision tension). If the request is unambiguous, skip questions entirely and note your assumptions in the plan.
 3. Require `TRIP-1-plan` to return the plan path, worker reports, review verdict, and unresolved decisions. Do not edit the plan or review it yourself.
 4. Require the plan-review loop to converge without asking permission. Cap at 5 rounds.
-5. **Interim checkpoint (the only one)**: present the plan summary (feature, approach, files affected, complexity, reviewer harness/model/status) and use `AskUserQuestion`: "Approve the plan and run the rest autonomously?" Options: "Approved — run it all" / "Request changes" / "Abort".
+5. **Interim checkpoint (the only one)**: present the plan summary (feature, approach, files affected, complexity, reviewer harness/model/status) and the feature worktree path that will host the rest of the run, then use `AskUserQuestion`: "Approve the plan and run the rest autonomously?" Options: "Approved — run it all" / "Request changes" / "Abort".
    - On approval, proceed through ALL remaining phases without further questions.
 
-## Phase 2: Implement (from `TRIP-2-implement`, unchanged mechanics)
+## Phase 2: Implement with phase-parallel batching (from `TRIP-2-implement`)
 
-1. Require `TRIP-2-implement` to dispatch `workspace-worker` for branch selection or creation.
+1. Require `TRIP-2-implement` to dispatch `workspace-worker` to locate or create the flow worktree.
 2. Invoke `TRIP-2-implement` as the implementation orchestrator with the resolved routing table.
 3. Require it to return batch reports, independent batch-review verdicts, and a green testing-gate report.
 4. Require its independent code-review loop to converge (cap 5 rounds). All fixes are delegated to `fixer` and all gates to `test-worker`.
@@ -109,11 +109,11 @@ Invoke `TRIP-3-release` as the release orchestrator. On the feature branch (neve
 
 ### Merge guidance (for the user, include as a PR comment only if asked)
 
-Merge with **"Rebase and merge"** (or squash) to keep the linear history the TRIP workflow relies on. After merging: pull main, `git tag vx.y.z && git push --tags`, and delete the branch.
+Merge with **"Rebase and merge"** (or squash) to keep the linear history the TRIP workflow relies on. After merging: pull main, `git worktree remove ../<repo>-<slug>-<suffix>`, `git tag vx.y.z && git push --tags`, then delete the branch.
 
 ---
 
 ## Failure handling
 
 - Any phase that cannot converge (plan review NEEDS_REWORK, capped code review, red testing gate you cannot fix) stops the run and reports to the user with the current state — never open a PR from a red or unreviewed tree.
-- The feature branch is always left in a clean, pushed state when stopping mid-way, so work is never lost.
+- The feature branch is always left in a clean, pushed state when stopping mid-way, so work is never lost — with one exception: if `TRIP-2-implement`'s phase scheduling stops because a merge conflict could not be resolved, the feature worktree is deliberately left mid-merge (conflict markers present, that phase's work not yet committed or pushed) so a human can resolve or abort it; every other stop condition still leaves the feature branch clean and pushed. Leave the outer feature worktree and any still-open phase worktrees in place rather than removing them, so the user or a resumed session can inspect or continue from exactly where the run stopped.

@@ -36,7 +36,7 @@ fall back to doing the work in the orchestrator context.
 | `fixer` | Corrections requested by a reviewer | Approving those corrections |
 | `test-worker` | Test authoring and execution of the requested gate | Code-review verdict |
 | `code-reviewer` | Independent full-change review and verdict | Editing the change it reviews |
-| `workspace-worker` | Branch checkout/creation, staging, commits, pushes, and status reports | Product changes or approval verdicts |
+| `workspace-worker` | Branch checkout/creation, worktree add/remove and `--no-ff` merges for the flow and phase lifecycle, staging, commits, pushes, and status reports | Product changes or approval verdicts |
 | `release-worker` | Version/docs/changelog/commit/PR preparation | Declaring an unverified implementation ready |
 | `release-verifier` | Verify release artifacts, branch safety, and PR readiness | Producing the release artifacts it verifies |
 
@@ -157,3 +157,19 @@ Every assignment must include:
 The orchestrator consumes reports, not hidden worker context. Carry decisions, corrections, and
 open findings explicitly into every subsequent assignment. Dispatch independent roles in
 parallel when the harness permits it; serialize roles that consume one another's artifacts.
+Independent roles explicitly include independent implementation phases: dispatch one isolated
+batch loop per phase in the current dependency frontier, in parallel when the harness permits it.
+
+**Scope every worker-run test command explicitly** — never leave a `test-worker` (or an
+`implementer`/`fixer` running its own verification) to decide how much of the suite to run. A
+`subagent`-harness worker's own long-running command is subject to the Bash tool's force-background
+past ~600s, and a backgrounded run cannot wake the worker that dispatched it — the turn ends with
+no result, not a slow one. Keep every routine per-batch invocation well under that ceiling by
+scoping it to the change; reserve a full-suite run for exactly one dedicated, orchestrator-owned
+dispatch (per phase or per feature), never as implicit self-verification inside every worker's
+turn.
+
+If a role's routing-table model/effort is consistently overridden per dispatch because the
+configured default proves unreliable for that role, update `docs/TRIP.md`'s routing table to match
+observed reality rather than continuing to override it on every call — the table should describe
+what actually gets dispatched, not an aspiration.

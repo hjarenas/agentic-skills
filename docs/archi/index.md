@@ -11,3 +11,7 @@
 - [[toolbox-plugin]] — standalone helpers: Conventional Commits enforcement, and an `AskUserQuestion` shim for non-Claude-Code agents.
 - [[trip-plugin]] — the Plan/Implement/Release orchestration workflow and its agent-routing contract.
 - [[trip-wiki-plugin]] — this wiki's own machinery: init, migrate, ingest, lint, query.
+
+## Mechanisms
+
+- [[worktree-parallelism]] — one git worktree per TRIP flow, and one per independent plan phase within a flow, with serialized phase-merge.

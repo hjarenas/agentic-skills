@@ -60,3 +60,10 @@ For a long batch, add `--background` and poll with `/codex:status`, collecting t
   it yourself during the batch review.
 - Model/effort follow `.codex/config.toml`. Override per run with `--model` / `--effort` (e.g. a
   stronger model for implementation than for review), or via `CODEX_MODEL` / `CODEX_EFFORT`.
+- Concurrent phases in separate git worktrees can safely use `--resume-last`: the currently
+  installed `codex` companion resolves each workspace with `git rev-parse --show-toplevel` and
+  hashes that canonical, per-worktree-distinct path for its job-storage directory, isolating
+  thread tracking between worktrees. This depends on the current, unpinned companion version and
+  should be regression-checked after companion upgrades. Its secondary fallback thread-resolution
+  path, used by an edge case that TRIP's current dispatch pattern does not exercise, was not
+  independently verified because the app-server internals are closed binary.

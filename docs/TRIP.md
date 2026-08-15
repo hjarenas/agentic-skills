@@ -15,7 +15,7 @@ yours, and no plugin update will touch it.
 - **Version file**: none, repo-wide. Each plugin carries its own semver in
   `plugins/<name>/.claude-plugin/plugin.json`, bumped independently when that plugin's files
   change. "Current version" below tracks this profile's own changelog/week bookkeeping only.
-- **Current version**: 0.1.0
+- **Current version**: 0.2.0
 - **Week anchor**: 2026-08-10
 - **Architecture**: `docs/archi/` (wiki)
 

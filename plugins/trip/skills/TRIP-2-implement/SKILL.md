@@ -28,31 +28,139 @@ orchestrator. There are no trivial-change or small-fix exceptions.
 
 ---
 
-## Step 0: Create a Branch (Pre-Implementation)
+## Step 0: Locate or Create the Flow Worktree (Pre-Implementation)
 
-**Always** work on a dedicated branch. Dispatch `workspace-worker` for every branch operation.
+**Always** work in a dedicated feature-branch worktree. Dispatch `workspace-worker` for every
+branch or worktree operation.
 
-`TRIP-1-plan` now creates and pushes this branch (with the plan doc as its first commit) as soon as the plan is approved, so the common case is that it **already exists**:
+`TRIP-1-plan` creates and pushes this branch in a worktree (with the plan doc as its first commit)
+as soon as the plan is approved, so the common case is that the worktree **already exists**:
 
-- Check first: does `docs/1-plans/F_x.y.z_<feature-name>.plan.md` already exist committed on a `feat/`/`fix/` branch (locally or on `origin`)? If so, `git checkout` that branch (or `git fetch` + checkout if it's only on `origin`) and continue on it — do **not** create a new one.
-- Only if no such branch exists (e.g. the plan was written directly without going through `TRIP-1-plan`'s persist step, or implementation is resuming from an unpushed local plan file) create one fresh:
+- From the primary tree, identify the commit that added
+  `docs/1-plans/F_x.y.z_<feature-name>.plan.md`, then run `git worktree list` and find every
+  candidate worktree whose local `feat/`/`fix/` branch contains that commit. This match is
+  ambiguous by itself once phase branches exist: every phase branch
+  (`feat/<slug>-<suffix>-phase-<n>`) is branched off the outer feature branch, so it also contains
+  the plan-adding commit — during a resumed mid-frontier run, the outer flow worktree and any
+  still-open phase worktrees can all match. Filter out any candidate whose branch name matches the
+  phase-branch pattern (ends in `-phase-<n>`, i.e. matches `-phase-[0-9]+$`) — the outer flow
+  branch never has this suffix. Exactly one candidate must remain; that is the flow worktree.
+  Operate inside its path. If zero or more than one candidate remain after filtering, stop and
+  report the ambiguity rather than guessing. Do **not** reconstruct a path from the plan slug or
+  guess its random suffix; the recorded worktree list is authoritative. If the branch exists only
+  on `origin`, fetch it before determining whether a corresponding local worktree exists.
+- Only if no persisted flow worktree exists (for example, the plan was written without
+  `TRIP-1-plan`'s persist step) have `workspace-worker` derive `<repo>` from the primary repository
+  directory's basename, compute one short collision-safe suffix, and create the same layout:
   ```bash
-  git checkout -b feat/[short-description]   # or fix/[short-description]
+  git worktree add ../<repo>-<slug>-<suffix> -b feat/<slug>-<suffix> <main branch>
+  # Use fix/<slug>-<suffix> for a fix.
   ```
-  Derive the short description from the plan/feature name — matching what `TRIP-1-plan` would have derived, so the two never diverge.
+  Preserve the plan file inside that worktree before implementation begins.
 
-If already on the correct dedicated branch for this work (e.g., resuming a session), continue on it either way.
+If already inside the correct flow worktree (for example, when resuming), continue there. Carry
+the resolved worktree path explicitly as the working directory in every implementer, reviewer,
+fixer, tester, workspace, and downstream `TRIP-3-release` dispatch for this flow.
 
 ---
 
-## Implementation Phase — Delegate to the configured workers
+## Phase Scheduling
+
+Parse the `Depends on:` line under every phase heading and track which phases have merged into
+the feature branch. Compute the current **frontier** as every unmerged phase whose dependencies
+are all merged; initially this is every `Depends on: none` phase. If the frontier is empty while
+any unmerged phase remains, on the first or any later round, stop immediately and report that the
+plan's dependency graph has no root or contains a cycle. Do not retry, idle, or limit this check to
+the case where no phase has merged yet.
+
+For every phase in the frontier, dispatch `workspace-worker` in parallel to create a phase branch
+and worktree from the feature branch, reusing the outer flow's collision-safe suffix:
+
+```bash
+git worktree add ../<repo>-<slug>-<suffix>-phase-<n> \
+  -b feat/<slug>-<suffix>-phase-<n> feat/<slug>-<suffix>
+```
+
+Use the corresponding `fix/` prefix when the flow branch uses it. The phase branch name must be
+flat and hyphen-joined; never use `feat/<slug>-<suffix>/phase-<n>`, because the existing feature
+ref is a file in git's ref hierarchy and cannot also be a parent directory. Creating a differently
+named branch from a branch checked out in another worktree is valid.
+
+Run one instance of the batch loop below inside each phase worktree, scoped only to that phase's
+checkboxes, with one loop dispatched per frontier phase in parallel. Carry each phase worktree's
+path explicitly as the working directory for all of its workers. Sibling phase slots proceed
+independently.
+
+### Phase gate and merge
+
+After all batches for a phase are staged, run its gate before merging:
+
+1. Dispatch `batch-reviewer` for the **full phase diff** and phase blast radius, not only the last
+   batch. Route corrections to `fixer` and re-review until clean.
+2. Dispatch `test-worker` for the lint, typecheck/build, and affected tests from the Testing Gate
+   below, explicitly scoped to that phase's files. Route failures to `fixer` and re-run the phase
+   gate.
+3. On pass, the phase is **merge-ready**. Dispatch `workspace-worker` to commit on the phase
+   branch, merge it into the feature branch with `git merge --no-ff`, push the feature branch,
+   remove the phase worktree, and delete the phase branch. This per-phase merge commit replaces
+   the single implementation commit formerly deferred to `TRIP-3-release`; that skill's final
+   release-documentation commit remains unchanged. Pushing here keeps the remote feature branch in
+   sync with each local phase merge as it lands, the same way `TRIP-1-plan` pushes eagerly at
+   persist time.
+
+**Merge/cleanup is serialized.** Implementation and gating (steps 1-2 above) stay parallel across
+phases — each phase runs in its own isolated worktree with no shared mutable state. But step 3
+mutates the shared feature-branch worktree, and a single working tree/`.git` is not safe for
+concurrent mutating git operations. If multiple phases become merge-ready around the same time,
+dispatch step 3 for one phase at a time, and hold that phase's merge slot — no other phase's merge
+may be dispatched against the feature worktree — from the moment its merge/cleanup step begins
+until that *same* phase's merge is fully resolved and the feature worktree is back to a clean,
+non-mid-merge state, signaled by that phase's own `WORKSPACE_COMPLETE`. A `WORKSPACE_BLOCKED`
+report does **not** release the slot: it surfaces a merge conflict while deliberately leaving the
+feature worktree mid-merge (conflict markers present, merge in progress) so it can be resolved in
+place — see "Merge conflict handling" below. Only the terminal `WORKSPACE_COMPLETE` for that same
+phase, whether from a clean merge or from completing its conflict-resolution sub-flow, frees the
+slot for the next ready phase's merge/cleanup. Never dispatch two merge/cleanup steps against the
+feature worktree concurrently, and never dispatch one while a prior phase's `WORKSPACE_BLOCKED` is
+still open. Sibling phases still implementing or gating are unaffected and continue in parallel.
+
+**Merge conflict handling.** `git merge --no-ff` leaves a conflict in progress — conflict markers
+in the files, unmerged entries in the index — unless explicitly aborted, so on conflict
+`workspace-worker` must **not** run `git merge --abort`. It reports `WORKSPACE_BLOCKED` with the
+conflicting file list while the merge stays in progress; this is an intermediate status within
+that phase's still-open merge attempt, not a terminal outcome, and the phase's merge slot from
+above stays held throughout. Route an `implementer` scoped only to the conflicting files to
+resolve them directly in the feature-branch worktree, which is mid-merge: the implementer edits
+the conflict-marked files to their correctly resolved content and removes the conflict markers
+(the phase worktree is discarded regardless). Re-run the normal phase gate over that resolution —
+`batch-reviewer` reviews the merge's resulting diff, plus scoped testing. On approval,
+`workspace-worker` runs `git add <resolved files>` then `git commit` — this finishes the
+in-progress merge commit directly. There is no "retry the merge" step: committing a resolved merge
+*is* completing it, and a fresh `git merge --no-ff` invocation would only hit the same conflict
+again, since nothing about either branch's history changed. `workspace-worker` then pushes the
+feature branch, removes the phase worktree, and deletes the phase branch, as in the normal case —
+only after all of that, with the feature worktree fully clean, does it report that same phase's
+`WORKSPACE_COMPLETE` and release the merge slot. Only that phase's slot pauses while sibling
+phases continue implementing or gating. If conflicts recur on re-review, surface
+`WORKSPACE_BLOCKED` to the user instead of retrying indefinitely — and because the merge slot is
+still held with the feature worktree stuck mid-merge, this stops the entire phase-scheduling loop,
+not just that one phase: no other phase's merge/cleanup may be dispatched against the same feature
+worktree until a human resolves it. Record in the flow's running notes, for the PR description and
+future planners, that this phase pair's dependency judgment was wrong; do not retroactively edit
+this plan's dependency graph.
+
+After each successful merge, recompute the frontier so newly unblocked phases enter the next
+round. Repeat until every phase has merged.
+
+## Per-Phase Implementation — Delegate to the configured workers
 
 Dispatch all implementation to the configured `implementer`. For `codex-bridge`, use the
 `codex-implement` skill with explicit model/effort overrides. Other harnesses receive the same
 batch scope and completion contract.
 
-Delegation is **batched**: the implementer handles a few checkboxes per turn, an independent
-batch reviewer checks them, and a fixer handles corrections. Carry explicit notes between turns.
+Delegation is **batched within each scheduled phase**: the implementer handles a few checkboxes
+per turn, an independent batch reviewer checks them, and a fixer handles corrections. Carry
+explicit notes between turns.
 
 ### 1. Read the plan and decide the batches
 
@@ -103,25 +211,45 @@ After each implementer report, before requesting the next batch:
    invoke `codex-batch-review`. Require `BATCH_APPROVED` before continuing.
 3. If findings exist, dispatch `fixer` (`codex-fix` for `codex-bridge`); then dispatch the batch
    reviewer again. Never let the implementer approve its own batch.
-4. Dispatch `test-worker` (`codex-test`) for the micro-gate. Route `TESTS_RED` to the fixer, then rerun.
+4. Dispatch `test-worker` (`codex-test`) for the micro-gate, with an **explicit narrow scope** in
+   the assignment (the batch's own files, `-k <pattern>`, or an equivalent targeted invocation) —
+   never "run the suite" left for the worker to interpret. Two reasons this is a hard rule, not a
+   style preference: a subagent-harness worker's own test command is subject to the Bash tool's
+   force-background past ~600s, and a backgrounded run cannot wake the worker that started it —
+   the turn simply ends without a result, costing a stalled round trip; and a project may
+   auto-mark whole directories (e.g. everything under an `integration/` path), so a naive
+   exclusion filter can silently select zero tests while still reporting green. Treat a report
+   whose selected/affected test count is 0 as a failed gate, not a pass — require the worker to
+   state the count and re-scope if it's zero. Route `TESTS_RED` to the fixer, then rerun.
 5. Dispatch `workspace-worker` (`codex-workspace`) to stage the reviewed batch with `git add -A`.
-   Require `WORKSPACE_COMPLETE`. No commits — history stays clean for release.
+   Require `WORKSPACE_COMPLETE`. Staging is batch-local; committing happens only at the phase gate.
 6. Have `batch-reviewer` verify completed plan checkboxes against the diff; have `planner` update missed checkbox state.
+
+**Plan-amendment hygiene**: if a decision made mid-batch changes what an earlier checklist bullet
+says (not just adds new scope), have `planner` edit that bullet in place and mark it superseded —
+never append the correction elsewhere in the plan. On a large plan, an appended correction is
+easy for a later batch or a resumed session to miss entirely, and shipping from the stale bullet
+is a real defect, not a documentation nit.
 
 **Adapt as you go**: clean batch → grow the next one; heavy corrections → shrink the next one and spell out the fix pattern in the notes. If Codex ignores notes or repeats corrected mistakes late in a long session, reset the thread at the next batch boundary — the plan file plus a summary note rebuilds context.
 
-### 4. Final pass
+**State brief over full-plan re-reads**: for a plan large enough that re-reading it in full is
+costly, maintain a short running note — current phase, decisions made and why, what's next — and
+lead every dispatch with it instead of (or ahead of) pointing a cold worker at the whole plan
+file. Update it at each batch/phase boundary; it is disposable orchestrator scratch state, not a
+plan artifact.
 
-After the last batch, dispatch `batch-reviewer` for the **full feature diff** and full-feature
-blast radius. Route corrections to `fixer`, then re-review until clean.
-
-The full testing gate and independent code review run **once**, after the final pass — never per batch.
+The former feature-wide "Final pass" is now the full-diff review in each phase gate. After **all
+phases have merged**, run the Testing Gate and Independent Code Review below exactly once over the
+integrated feature. The per-phase gates are delta review plus scoped testing; the feature-wide
+independent review is the single deep review that catches cross-phase integration issues. Never
+run that deep review per batch or per phase.
 
 ---
 
 ## Testing Gate
 
-After implementation, before the code-review loop. Dispatch the entire gate to `test-worker`
+After all phases have merged, before the code-review loop, dispatch the entire feature-wide gate to `test-worker`
 (`codex-test` for `codex-bridge`).
 Route failures to `fixer` and rerun the gate. Any failure blocks review.
 
@@ -143,7 +271,7 @@ Also `test-worker`'s command, not yours:
 <test command — docs/TRIP.md § Commands> <pattern-for-affected-files>
 ```
 
-Only the files/areas the change touched — never the full suite by default. If a failure here looks infra-related rather than caused by the change (flaky fixture, unexpected interaction between the narrowed set of tests), have `test-worker` cross-check it against a full-suite run before it blocks the gate — a narrow invocation can surface a pre-existing issue the full suite masks or resolves differently.
+Only the files/areas the change touched — never the full suite by default. Pass the scope explicitly; do not leave `test-worker` to infer it. Require the report to state the selected/affected test count — a count of 0 is a failed gate (a project's auto-marking or an over-broad exclusion filter can silently deselect everything a scoped run was supposed to cover), not a clean pass. If a failure here looks infra-related rather than caused by the change (flaky fixture, unexpected interaction between the narrowed set of tests), have `test-worker` cross-check it against a full-suite run before it blocks the gate — a narrow invocation can surface a pre-existing issue the full suite masks or resolves differently.
 
 ### 3. Integration impact check
 
@@ -180,7 +308,8 @@ Fix failures before starting the loop.
 
 ## Independent Code Review
 
-Always dispatch the configured `code-reviewer` after the testing gate passes. It must be
+After all phases have merged and the feature-wide testing gate passes, dispatch the configured
+`code-reviewer` exactly once. It must be
 independent from the implementer, batch reviewer, fixer, and test worker.
 
 ### Loop
@@ -233,6 +362,8 @@ Codex is stateless, so the implementer notes in step 4 are load-bearing. Skippin
 ---
 
 ## Handoff to Release
+
+The worktree used throughout this flow persists unchanged into `TRIP-3-release` — it is the same feature-branch worktree the phase branches merged into.
 
 After Codex converges (or is skipped):
 

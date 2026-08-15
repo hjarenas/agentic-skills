@@ -2,8 +2,11 @@ You are re-reviewing a code change you already reviewed once. This is a **fresh 
 you do not remember the previous turn, so your previous review is reproduced below verbatim.
 Treat it as your own prior work.
 
-Re-run `git status -s` and `git diff HEAD` (the same working-tree-vs-last-commit view from the
-first review) to see the current state, then produce an incremental review:
+Read `docs/TRIP.md` § Project to resolve the project's main branch name.
+
+Re-run `git status -s` and `git diff $(git merge-base <main branch> HEAD)` (the same
+full-feature-diff view from the first review) to see the current state, then produce an incremental
+review:
 
   1. Confirm whether each of your prior findings is now addressed. Quote the prior finding briefly, then state addressed / not addressed / partially addressed with the `file:line` references that resolved (or didn't).
   2. Flag any **new** issues introduced by the edits — re-checking against every section of the TRIP review checklist named in the additional-context block below (the same single-source checklist used in the first review).

@@ -16,6 +16,10 @@ per-plugin semver discipline.
 - **Plugins** — one page per plugin: what it does, its skills, and how they relate to each other.
   A newcomer reads the Distribution page once, then the one or two Plugin pages relevant to
   whatever they're touching.
+- **Mechanisms** — a cross-cutting behavior that spans more than one plugin and would otherwise
+  bloat every plugin page it touches (e.g. [[worktree-parallelism]], which spans `trip`'s flow
+  orchestration and `codex-bridge`'s workspace allowlist). Reserve this category for genuinely
+  cross-plugin mechanics; a single-plugin feature belongs in that plugin's own page instead.
 
 Five plugins currently exist (`trip`, `trip-wiki`, `codex-bridge`, `pocock-core`, `toolbox`) —
 five Plugin pages, one Distribution page. A sixth plugin gets a sixth page; retiring one deletes

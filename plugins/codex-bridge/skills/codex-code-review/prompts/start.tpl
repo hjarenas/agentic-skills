@@ -7,16 +7,18 @@ If `{{TARGET}}` resolves to a file under `docs/1-plans/`, treat it as the **impl
 
 To see the change set:
   git status -s
-  git diff HEAD        # staged + unstaged vs last commit
+  git diff $(git merge-base <main branch> HEAD)
 
-If `git diff HEAD` returns nothing (already committed), use `git diff @{u}...HEAD` or `git log --reverse main..HEAD`.
+Resolve `<main branch>` from `docs/TRIP.md` § Project. Use this single-ref form so the diff
+includes the full feature branch plus staged and unstaged working-tree changes.
 
 ## Prerequisites — read first
 
-1. `docs/archi/index.md`, then the linked pages covering the area this change touches. If `docs/archi/` does not exist, read `docs/ARCHI.md` instead.
-2. `docs/3-code-review/checklist.md` — single source of truth for the review checklist, severity classification, and approval gate. This file is project-local and was tailored to this codebase by TRIP-init.
-3. Plan file `{{TARGET}}` if it's a path.
-4. Corresponding changelog in `docs/2-changelog/` if present.
+1. `docs/TRIP.md`, especially § Project for the project's main branch name.
+2. `docs/archi/index.md`, then the linked pages covering the area this change touches. If `docs/archi/` does not exist, read `docs/ARCHI.md` instead.
+3. `docs/3-code-review/checklist.md` — single source of truth for the review checklist, severity classification, and approval gate. This file is project-local and was tailored to this codebase by TRIP-init.
+4. Plan file `{{TARGET}}` if it's a path.
+5. Corresponding changelog in `docs/2-changelog/` if present.
 
 ## Review priorities (in order)
 
