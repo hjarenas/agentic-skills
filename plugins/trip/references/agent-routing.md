@@ -71,12 +71,32 @@ harness default.
 
 Supported harness values:
 
-- `subagent`: launch a native harness sub-agent and include the selected model/effort when the
-  harness supports those fields. Use `general-purpose` as the subagent type for every role unless
-  the invocation overrides it — never `Explore` or another narrow read-only search agent: its own
-  description disqualifies it for open-ended discovery, design-doc auditing, and cross-file
-  consistency work, and write-capable roles (`implementer`, `fixer`, `workspace-worker`,
-  `release-worker`, …) need write access it does not have.
+- `subagent`: launch a native harness sub-agent, using the `trip`-plugin agent named after the
+  role itself (`trip:discovery`, `trip:planner`, `trip:plan-reviewer`, `trip:implementer`,
+  `trip:batch-reviewer`, `trip:fixer`, `trip:test-worker`, `trip:code-reviewer`,
+  `trip:workspace-worker`, `trip:release-worker`, `trip:release-verifier`) — never
+  `general-purpose` and never `Explore` or another narrow read-only search agent. Each named agent
+  already carries that role's read/write boundary (a role with no file-content-editing needs, or
+  that only reviews, has `Write`/`Edit` denied — including `workspace-worker`, which edits no
+  file content at all, only runs git commands against it), so a role dispatched through the wrong
+  agent fails structurally rather than only by convention — `general-purpose`'s unrestricted
+  access and `Explore`'s read-only, narrow-search scope both blur that boundary, and `Explore`'s
+  own description disqualifies it for open-ended discovery, design-doc auditing, or cross-file
+  consistency work regardless. Include the selected model/effort when the harness supports those
+  fields.
+
+  **Upgrade note**: these named agents ship as `plugins/trip/agents/*.md`, auto-discovered like
+  skills — a project running an older cached `trip` install (before this file existed) will not
+  have them yet, and a dispatch to `trip:<role>` fails with an "Unknown agent" error, the same
+  failure class as an un-reloaded skill (the repo `README.md`'s "codex-bridge" install step notes
+  the identical symptom for a plugin whose skills haven't registered yet). That error is
+  diagnostic, not a routing dead end: retry the *same* dispatch
+  with `general-purpose` instead for this one call, tell the user the `trip` plugin needs
+  `/plugin marketplace update` (or a fresh install) followed by `/reload-plugins` or a full
+  restart, and say so explicitly in your report rather than silently falling back for the rest of
+  the run — once reloaded, later dispatches in the same session pick up the real named agents
+  again without further action. No project's `docs/TRIP.md` needs editing for this upgrade; the
+  subagent-type choice lives here, not in the per-project routing table.
 - `codex-bridge`: invoke the role mapping below. Pass model/effort as explicit per-run overrides;
   do not mutate `.codex/config.toml`.
 - `skill:<name>`: invoke the named installed worker skill, including the role, artifact, scope,
