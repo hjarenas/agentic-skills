@@ -146,23 +146,9 @@ can overwrite another worker's report.
 
 ### Codex-heavy preset
 
-Use this opt-in profile when Claude Opus should own discovery/planning and Codex should own every
-downstream worker role. `opus` is the native Claude harness alias; the Codex values are runtime
-model IDs.
-
-| Role | Harness | Model | Effort |
-| :--- | :--- | :--- | :--- |
-| discovery | subagent | opus |  |
-| planner | subagent | opus |  |
-| plan-reviewer | codex-bridge | gpt-5.6-sol |  |
-| implementer | codex-bridge | gpt-5.6-luna |  |
-| batch-reviewer | codex-bridge | gpt-5.6-sol |  |
-| fixer | codex-bridge | gpt-5.6-terra |  |
-| test-worker | codex-bridge | gpt-5.6-luna |  |
-| code-reviewer | codex-bridge | gpt-5.6-sol |  |
-| workspace-worker | codex-bridge | gpt-5.6-luna |  |
-| release-worker | codex-bridge | gpt-5.6-luna |  |
-| release-verifier | codex-bridge | gpt-5.6-luna |  |
+An opt-in profile for projects that want Claude Opus on discovery/planning and Codex on every
+downstream worker role — most projects never adopt it. See `codex-heavy-preset.md` in this
+directory for the full table and how to adopt it.
 
 ## Dispatch contract
 
@@ -187,7 +173,9 @@ past ~600s, and a backgrounded run cannot wake the worker that dispatched it —
 no result, not a slow one. Keep every routine per-batch invocation well under that ceiling by
 scoping it to the change; reserve a full-suite run for exactly one dedicated, orchestrator-owned
 dispatch (per phase or per feature), never as implicit self-verification inside every worker's
-turn.
+turn. Require the report to state the selected/affected test count — a project's auto-marking or
+an over-broad exclusion filter can silently deselect everything a scoped run was supposed to
+cover, so treat a count of 0 as a failed gate, not a clean pass.
 
 If a role's routing-table model/effort is consistently overridden per dispatch because the
 configured default proves unreliable for that role, update `docs/TRIP.md`'s routing table to match
