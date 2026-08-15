@@ -7,7 +7,9 @@ argument-hint: "[--model M] [--effort E] <plan-path> [extra context] | reset/sho
 # Codex Code Review
 
 Iterative code review of uncommitted changes via Codex, using TRIP's own review prompt. Codex
-reads the plan and runs `git status -s` / `git diff HEAD` to inspect the change set.
+reads the plan, resolves the main branch from `docs/TRIP.md` § Project, and runs
+`git status -s` / `git diff $(git merge-base <main branch> HEAD)` to inspect the full feature diff,
+including staged and unstaged changes.
 
 ## Why not `/codex:review`?
 
@@ -58,8 +60,9 @@ Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
 
 ## Diff Visibility
 
-Codex runs read-only. If `git status -s` / `git diff HEAD` fail for it, pass the diff inline as
-extra context: `DIFF="$(git diff --stat HEAD; echo '---'; git diff HEAD)"`.
+Codex runs read-only. If `git status -s` or the merge-base diff fails for it, resolve `<main
+branch>` from `docs/TRIP.md` § Project and pass the full feature diff inline as extra context:
+`BASE="$(git merge-base <main branch> HEAD)"; DIFF="$(git diff --stat "$BASE"; echo '---'; git diff "$BASE")"`.
 
 ## After Convergence
 

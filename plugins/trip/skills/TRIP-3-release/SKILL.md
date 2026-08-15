@@ -18,6 +18,12 @@ pure orchestrator. Dispatch all verification and release mutations; do none your
 
 This skill runs after `TRIP-2-implement` has converged (implementation done, testing gate green, Codex code review `APPROVED` or explicitly skipped). It is normally chained from TRIP-2 in the same session, but can be invoked standalone in a fresh session.
 
+Continue inside the feature-branch worktree created for this flow by `TRIP-1-plan`, not the
+primary working tree. Steps 1-10 and every `release-worker` or `release-verifier` dispatch must
+carry that worktree path explicitly as their working directory. A standalone invocation locates
+it using the same plan-commit-to-branch match in `git worktree list` described by
+`TRIP-2-implement` Step 0; it must not reconstruct the path from naming conventions.
+
 ---
 
 ## Prerequisites
@@ -215,8 +221,14 @@ Report the PR URL to the user. **Do not merge the PR yourself.**
 
 The user merges with **"Rebase and merge"** (or squash) to keep linear history. Then:
 
+**This is the one cwd exception in the flow.** Switch back to the primary working tree before
+running any command below. Update the main branch there, then remove the feature worktree from
+the primary tree; Git cannot remove the worktree that is the current working directory. Only
+after the worktree is removed can the checked-out feature branch be deleted.
+
 ```bash
 git checkout <main branch — docs/TRIP.md § Project> && git pull
+git worktree remove ../<repo>-<slug>-<suffix>
 git tag vx.y.z && git push --tags
 git branch -d <feature-branch>
 ```

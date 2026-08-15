@@ -1,9 +1,9 @@
 ---
 title: codex-bridge plugin
 status: current
-updated: 2026-08-11
-verified-at: 1.2.1
-links: [distribution, trip-plugin]
+updated: 2026-08-15
+verified-at: 1.2.2
+links: [distribution, trip-plugin, worktree-parallelism]
 ---
 
 Nine worker-role skills that run prompts through OpenAI's Codex CLI (installed separately as the
@@ -24,6 +24,11 @@ State is stored per-target under `.codex-bridge/` (gitignored), keyed so a plan'
 its code-review reports never collide (`<plan-path>#batch-review-2`, etc.). `reset`/`show` runtime
 actions drop or display the stored state without invoking Codex.
 
+`codex-implement`'s `--resume-last` is also safe across concurrent [[worktree-parallelism]]
+phases: the installed `codex` companion hashes each workspace's canonical `git rev-parse
+--show-toplevel` path for its job-storage directory, so thread tracking is isolated per worktree.
+This depends on the current, unpinned companion version rather than a documented guarantee.
+
 ## The roles
 
 | Skill | Access | Completion tags |
@@ -34,7 +39,7 @@ actions drop or display the stored state without invoking Codex.
 | `codex-implement` | write | `IMPLEMENTATION_COMPLETE`, `IMPLEMENTATION_PARTIAL` — the one skill using `--resume-last`, since continuing the same batch *is* the point |
 | `codex-fix` | write | `FIX_COMPLETE`, `FIX_PARTIAL` — applies only supplied findings, never expands scope |
 | `codex-test` | write | `TESTS_GREEN`, `TESTS_RED` |
-| `codex-workspace` | restricted write | `WORKSPACE_COMPLETE`, `WORKSPACE_BLOCKED` — branch/stage/commit/push only, no stash/merge/tag without explicit authorization |
+| `codex-workspace` | restricted write | `WORKSPACE_COMPLETE`, `WORKSPACE_BLOCKED` — branch/stage/commit/push only, no stash/tag without explicit authorization; `git worktree add/remove` and `git merge --no-ff` are also allowlistable, denied unless a dispatch's `--extra` names each one, for flow/phase worktree lifecycles (see [[worktree-parallelism]]) |
 | `codex-release` | restricted write | `RELEASE_COMPLETE`, `RELEASE_BLOCKED` |
 | `codex-release-verify` | read-only | `RELEASE_APPROVED`, `RELEASE_REQUEST_CHANGES` |
 | `codex-ask` | read-only | Advisory only, no verdict tag — a second opinion on any question, not gated on the answer |
@@ -42,6 +47,14 @@ actions drop or display the stored state without invoking Codex.
 Every role-skill except `codex-ask` is deliberately thin: the `SKILL.md` is an orchestration
 skeleton around `plugins/codex-bridge/scripts/codex-run.py`, and the actual prompt content is disclosed into
 `skills/<name>/prompts/*.tpl`, loaded only when that role runs.
+
+## Diff baseline
+
+`codex-code-review`'s `start.tpl`/`resume.tpl` diff against `git diff $(git merge-base <main
+branch> HEAD)`, not `git diff HEAD`. The latter only shows the working tree against the *last
+commit*, which silently narrows to "since the most recent phase merge" once
+[[worktree-parallelism]] lets phases commit mid-flow — a reviewer would approve a change without
+ever having seen most of it. Fixed in 1.2.2.
 
 ## Why not just `/codex:review`
 

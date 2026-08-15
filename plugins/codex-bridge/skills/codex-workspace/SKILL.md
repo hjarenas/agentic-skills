@@ -12,3 +12,7 @@ Use a unique target such as `<plan-path>#workspace-branch`. Parse model/effort a
 This skill does not grant authority by itself. Do not infer permission for stashing, deletion,
 force operations, merging, tagging, or unrelated commits. Parse `WORKSPACE_COMPLETE` or
 `WORKSPACE_BLOCKED`. Support runtime `show` and `reset` actions.
+
+`git worktree add`, `git worktree remove`, and `git merge --no-ff` form an allowlistable
+operation class for flow and phase worktree lifecycles. The worker may perform them only when the
+dispatch explicitly lists each authorized operation in `--extra`; they remain denied by default.

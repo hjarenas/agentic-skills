@@ -155,17 +155,39 @@ Project-specific technical concerns: use the bullets from docs/TRIP.md § Plan c
 
 ### Phase 1: [Phase Name] (if multiple phases are needed) or simply skip title if only one phase is needed
 
+Depends on: none
+
 - [ ] Task description
 - [ ] Another task
 
 ### Phase 2: [Phase Name] (if applicable)
 
+Depends on: Phase 1
+
 - [ ] Task description
 - [ ] Another task
 
-**Note**: For simple plans, a single phase is sufficient. Split into multiple phases only for complex features requiring sequential implementation.
+**Note**: For simple plans, a single phase with `Depends on: none` is sufficient. For multiple
+phases, judge dependencies by whether they touch disjoint files or subsystems: phases with
+`Depends on: none` may run concurrently during `TRIP-2-implement`; name another phase only when
+its files must genuinely exist first. Getting this wrong is recoverable but causes a merge-conflict
+pause, so judge conservatively when unsure. Examples: `Depends on: none`; `Depends on: Phase 1`.
+
+**Note**: If a phase introduces a new end-to-end capability or flow (a new principal, a new
+integration path, anything with an outside observer), make proving that flow reachable — one real
+test or manual check that a real caller can complete it, not a unit test of its parts — the
+**first** checklist item of that phase, not the last. A suite that stays green while the flow
+itself is unusable is a common and expensive failure mode; ordering the reachability check first
+catches it on day one of the phase instead of after every other item is already built on top of
+the broken assumption.
 
 **Note**: Do NOT write test code during planning — the Test Impact section above only names what the TRIP-2 testing gate will run and author.
+
+**Note**: Once implementation is underway, a decision that changes what an earlier checklist
+bullet says must be applied by editing that bullet in place and marking it superseded — never by
+appending the correction elsewhere in the document. This applies during planning too: if review
+or a later phase's context changes an earlier bullet's meaning before the plan is even approved,
+fix it in place.
 ```
 
 ## Quality Standards
@@ -180,6 +202,14 @@ Project-specific technical concerns: use the bullets from docs/TRIP.md § Plan c
 ## Step 3: Independent Second-Opinion Review
 
 Before the user sees the plan, run the configured independent plan-review loop.
+
+Before presenting the plan, validate the `Depends on:` graph across every `### Phase N` heading.
+The `plan-reviewer`, or the planner as a self-check when independent review is skipped, must
+confirm that at least one phase says `Depends on: none` and that the graph has no cycles. Check
+cycles by tracing every phase's dependency chain back to a root; revisiting a phase already in
+the current chain is a cycle. A missing root or any cycle is a blocking finding that must be fixed
+before presentation, not an advisory note: either can leave `TRIP-2-implement` with unmerged
+phases and an empty frontier, initially or after some root phases merge.
 
 ### Confirm
 
@@ -233,16 +263,34 @@ Handle feedback:
 
 ### Persist the Approved Plan
 
-Once the plan is approved, create its feature branch immediately and push the plan doc — don't leave an approved plan sitting uncommitted on `main` even if implementation won't start right away.
+Once the plan is approved, create its feature worktree immediately and push the plan doc — don't
+leave an approved plan sitting uncommitted on `main` even if implementation won't start right
+away.
 
-1. Dispatch `workspace-worker` to confirm a clean tree. If unrelated work exists, report it to the user; do not stash or commit it without authorization.
-2. Have `workspace-worker` create `feat/[short-description]` (or `fix/[short-description]`).
-3. Have `workspace-worker` commit **only** the plan file and push the branch.
+1. From the primary working tree, dispatch `workspace-worker` to confirm a clean tree. If unrelated
+   work exists, report it to the user; do not stash or commit it without authorization. The new
+   worktree branches from this clean primary tree's main branch.
+2. Have `workspace-worker` derive `<repo>` from the current repository directory's basename and
+   compute one short collision-safe `<suffix>` (a hash or timestamp) for this flow. Have it run:
+   ```bash
+   git worktree add ../<repo>-<slug>-<suffix> -b feat/<slug>-<suffix> <main branch>
+   # Use fix/<slug>-<suffix> for a fix.
+   ```
+   Compute the suffix once and retain the resulting worktree path and branch name for the whole
+   flow; do not regenerate it in downstream steps.
+3. From inside the new worktree, preserve the approved plan at the same repository-relative path,
+   commit **only** that plan file, and push the new branch.
 4. Share the plan's GitHub blob link with the user (`https://github.com/<owner>/<repo>/blob/<branch>/docs/1-plans/F_x.y.z_<feature-name>.plan.md`) so it's reviewable/shareable before implementation begins.
 
+Every subsequent dispatch for this flow — `TRIP-2-implement`, `TRIP-3-release`, and every worker
+they dispatch — must carry `../<repo>-<slug>-<suffix>` explicitly as its working directory. Do
+not rely on the caller's current directory. Once cwd is threaded this way, `codex-run.py`'s
+existing `Path.cwd()`-keyed `.codex-bridge/` state automatically isolates stored Codex reviews
+and reports per worktree; rely on that behavior without adding another isolation mechanism.
+
 Then **use the `AskUserQuestion` tool** to ask:
-  - **Question**: "Plan approved and pushed on `<branch>`. Would you like to start implementation now?"
-  - **Options**: "Yes, implement now" (proceed with `TRIP-2-implement` using this plan — it will continue on this same branch), "Not yet" (I'll implement later)
+  - **Question**: "Plan approved and pushed on `<branch>` in worktree `<worktree-path>`. Would you like to start implementation now?"
+  - **Options**: "Yes, implement now" (proceed with `TRIP-2-implement` using this plan in that same worktree), "Not yet" (I'll implement later)
 
 ---
 

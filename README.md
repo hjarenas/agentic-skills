@@ -156,13 +156,17 @@ flowchart TD
 1. **`/TRIP-1-plan "add rate limiting"`** — reads `docs/TRIP.md` for the project profile, then
    dispatches discovery and planning workers for the relevant architecture pages and code graph.
    The orchestrator relays clarifying questions, an independent plan reviewer loops with the
-   planner until `APPROVED`, and a workspace worker creates the branch and commits the plan.
+   planner until `APPROVED`, and a workspace worker creates the flow's dedicated git worktree and
+   branch, commits the plan, and pushes it.
 
-2. **`/TRIP-2-implement <plan>`** — splits the plan into batches that each leave the tree green,
-   delegates each to the configured implementer. Independent batch-reviewer, fixer, test-worker,
-   and workspace-worker roles review, correct, gate, and checkpoint every batch. A full testing
-   gate precedes the independent code-review loop. `/codex:adversarial-review` remains available
-   as an extra pass on risky changes.
+2. **`/TRIP-2-implement <plan>`** — computes the plan's phase dependency frontier and runs one
+   worktree-isolated batch loop per independent phase in parallel. Each phase splits into batches
+   that each leave the tree green, delegated to the configured implementer, with independent
+   batch-reviewer, fixer, test-worker, and workspace-worker roles reviewing, correcting, gating,
+   and checkpointing every batch. A phase that clears its gate merges into the feature branch
+   (merges are serialized so only one phase mutates it at a time); once every phase has merged, a
+   full testing gate precedes the independent code-review loop. `/codex:adversarial-review`
+   remains available as an extra pass on risky changes.
 
 3. **`/TRIP-3-release <plan>`** — a release worker bumps the version, promotes the review, writes
    changelogs, ingests the wiki, and updates the README. An independent release verifier checks

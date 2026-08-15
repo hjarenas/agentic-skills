@@ -1,9 +1,9 @@
 ---
 title: trip plugin
 status: current
-updated: 2026-08-11
-verified-at: 1.3.0
-links: [distribution, trip-wiki-plugin, codex-bridge-plugin]
+updated: 2026-08-15
+verified-at: 1.4.0
+links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
 The Plan → Implement → Release orchestration workflow. `trip` skills never touch code, tests, or
@@ -31,6 +31,14 @@ This separation is the **agent routing contract**
 requires explicit `/` invocation because it's either a one-time setup/migration step or an
 autonomy-maximizing path that shouldn't fire on its own judgment. `TRIP-init` hands architecture
 documentation off to [[trip-wiki-plugin]] rather than owning it itself.
+
+## Worktree parallelism
+
+`TRIP-1-plan` gives each flow its own git worktree, and `TRIP-2-implement` gives each independent
+plan phase (declared via a `Depends on:` line) its own worktree branched off the feature branch,
+running phase batch loops in parallel and merging them back one at a time. See
+[[worktree-parallelism]] for the full mechanism, including the serialized merge slot,
+conflict-in-place resolution, and the `TRIP-3-release` cleanup exception.
 
 ## The profile: `docs/TRIP.md`
 
