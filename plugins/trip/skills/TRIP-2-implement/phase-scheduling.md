@@ -62,12 +62,10 @@ may be dispatched against the feature worktree — from the moment its merge/cle
 until that *same* phase's merge is fully resolved and the feature worktree is back to a clean,
 non-mid-merge state. A `WORKSPACE_BLOCKED` report does **not** release the slot: it surfaces a
 merge conflict while deliberately leaving the feature worktree mid-merge (conflict markers
-present, merge in progress) so it can be resolved in
-place — see "Merge conflict handling" below. A stuck slot strands every other phase: none can
-merge even when its isolated implementation and gate have finished. Never dispatch two
-merge/cleanup steps against the feature worktree concurrently, and never dispatch one while a
-prior phase's `WORKSPACE_BLOCKED` is still open. Sibling phases still implementing or gating are
-unaffected and continue in parallel until they need the slot.
+present, merge in progress) so it can be resolved in place — see "Merge conflict handling" below.
+A stuck slot strands every other phase: none can merge even when its isolated implementation and
+gate have finished. Sibling phases still implementing or gating are unaffected and continue in
+parallel until they need the slot.
 
 On the normal report path, that same phase's `WORKSPACE_COMPLETE` proves both that its merge
 landed and that cleanup finished, so release the slot.
@@ -84,11 +82,10 @@ all four observations:
 3. The recorded expected tip of that specific phase branch is one of `HEAD`'s parents.
 4. The remote feature ref observed with `git ls-remote` equals that exact `HEAD`.
 
-This audit is not a ping or re-dispatch of the silent worker: it is a new assignment to a
-different worker to report repository state. A clean tree and some pushed commit are insufficient;
-they could belong to the wrong phase. Only all four observations establish **merge landed; slot
-releasable**. This narrow state is distinct from `WORKSPACE_COMPLETE`, which also requires phase
-worktree and branch cleanup. Record the reconstructed merge and its four observations in the flow
+Dispatch a different worker to report repository state. A clean tree and some pushed commit are
+insufficient; they could belong to the wrong phase. Only all four observations establish **merge
+landed; slot releasable**. This narrow state is distinct from `WORKSPACE_COMPLETE`, which also
+requires phase worktree and branch cleanup. Record the reconstructed merge and its four observations in the flow
 notes, release the merge slot, and allow the next ready phase to merge.
 
 After releasing the slot, dispatch a separate `workspace-worker` assignment scoped to cleanup only:
@@ -99,9 +96,8 @@ merge slot for this cleanup, but do not count the phase as fully `WORKSPACE_COMP
 succeeds.
 
 If any audit check fails or any result is ambiguous, stop the whole phase-scheduling loop and
-surface the observations. Keep the slot held; dispatch no merge or cleanup on a guess. Releasing
-on inferred rather than observed state is the one failure here that can corrupt the feature
-branch.
+surface the observations. Keep the slot held. Releasing on inferred rather than observed state is
+the one failure here that can corrupt the feature branch.
 
 **Merge conflict handling.** `git merge --no-ff` leaves a conflict in progress — conflict markers
 in the files, unmerged entries in the index — unless explicitly aborted, so on conflict
