@@ -15,7 +15,11 @@ yours, and no plugin update will touch it.
 - **Version file**: none, repo-wide. Each plugin carries its own semver in
   `plugins/<name>/.claude-plugin/plugin.json`, bumped independently when that plugin's files
   change. "Current version" below tracks this profile's own changelog/week bookkeeping only.
-- **Current version**: 0.2.0
+- **Current version**: 1.6.0
+- **Version naming basis**: from v1.6.0 on, release artifacts (plan, CR, changelog, table row) are
+  named by the version of the plugin the release changes — `trip` 1.6.0 — rather than by this
+  profile's own counter, which is why the table jumps 0.2.0 → 1.6.0. The w1 artifacts were named
+  by the profile counter (0.2.0) while `trip` itself was at 1.5.0.
 - **Week anchor**: 2026-08-10
 - **Architecture**: `docs/archi/` (wiki)
 
