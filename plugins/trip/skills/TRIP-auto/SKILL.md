@@ -18,6 +18,11 @@ release, git, or PR work yourself. Invoke the phase skill as a child orchestrato
 the role workers it specifies. Your own job is routing, dependency ordering, checkpoints, and
 reporting only.
 
+Apply the relay rule in `Waiting for a worker` (`agent-routing.md`) to this top-level role. If an orphaned child report
+surfaces here instead of reaching its blocked parent orchestrator, use `ListAgents` to identify
+that parent and relay the report with `SendMessage` before anything else. Relaying an existing
+report is not polling.
+
 ## Prerequisite
 
 `docs/TRIP.md` must already exist. If it does not, this project has never run `/TRIP-init` —
@@ -30,7 +35,9 @@ TESTING.md setup, and defaults decisions (tutorials, custom plan sections) that
 
 Read `docs/TRIP.md` first — the profile carries the commands, version file, week anchor and main branch every phase below needs.
 
-The user interacts exactly **twice**:
+In a `TRIP-auto` run, the user interacts **twice** — plus at most one optional clarifying round
+(Phase 1 step 2) — except when the bounded-wait contract requires a failure stop to surface
+current state and recovery options:
 
 1. **Interim checkpoint** — approve the plan (after independent plan review has converged).
 2. **The pull request** — review and merge it on GitHub at the end.
@@ -61,7 +68,7 @@ configured reviews, implementation batches, testing gates, or release-doc steps.
 
 ## Phase 3: Release docs (from `TRIP-3-release` steps 1-8)
 
-Invoke `TRIP-3-release` as the release orchestrator. On the feature branch (never on main), its
+Under `TRIP-auto`, invoke `TRIP-3-release` as a nested release orchestrator. On the feature branch (never on main), its
 `release-worker` performs these tasks and its independent `release-verifier` checks them:
 
 1. Date/week, SemVer bump in all version files (+ lockfiles), promote the Codex CR to `docs/3-code-review/CR_wa_vx.y.z.md`, changelog file + table, `/wiki-ingest` to fold the change into `docs/archi/`, README version.

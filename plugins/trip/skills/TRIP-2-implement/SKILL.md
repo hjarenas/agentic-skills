@@ -290,10 +290,12 @@ The worktree used throughout this flow persists unchanged into `TRIP-3-release` 
 After Codex converges (or is skipped):
 
 - Cross the corresponding checkboxes in the plan todo list (if any)
-- Then **use the `AskUserQuestion` tool** to ask:
+- In a standalone run, then **use the `AskUserQuestion` tool** to ask:
   - **Question**: "Is the implementation complete?"
   - **Options**: "Yes, everything is complete" (proceed to release), "No, there are remaining items" (continue working)
+  - When running as a child of `TRIP-auto`, skip this prompt and return completion to the parent —
+    the converged review and green gate are the completion criteria.
 
-**If "Yes"**: proceed directly into the release — invoke the `TRIP-3-release` skill and follow it in this session, passing the same plan path (or feature label). The release skill owns everything from version bump to opening the pull request.
+**If "Yes" in a standalone `TRIP-2-implement` run**: proceed directly into the release — invoke the `TRIP-3-release` skill and follow it in this session, passing the same plan path (or feature label). The release skill owns everything from version bump to opening the pull request. When `TRIP-2-implement` runs as a child of `TRIP-auto`, return completion to that parent instead; `TRIP-auto` dispatches the nested release orchestrator.
 
 **If "No"**: continue working, then repeat the sequence: testing gate → Codex review → this question.
