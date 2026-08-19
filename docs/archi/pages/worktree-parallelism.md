@@ -1,8 +1,8 @@
 ---
 title: Worktree parallelism
 status: current
-updated: 2026-08-15
-verified-at: 1.5.0
+updated: 2026-08-20
+verified-at: 1.6.0
 links: [trip-plugin, codex-bridge-plugin]
 ---
 
@@ -62,6 +62,13 @@ dispatch. A conflicted merge is resolved **in place** — files fixed, staged, a
 complete the existing merge — never aborted and retried, since retrying an unchanged merge against
 unchanged branches reproduces the same conflict.
 
+If the slot holder dies or its report is lost, every other phase is stranded at the merge slot,
+even when its isolated implementation and gate have finished. Recovery follows
+`plugins/trip/skills/TRIP-2-implement/phase-scheduling.md`'s **Phase gate and merge** section: dispatch a read-only `workspace-worker`
+audit and require its four-part observable merge test. Only the observed **merge landed; slot
+releasable** condition releases the slot; any failed or ambiguous observation keeps it held and
+stops the scheduling loop.
+
 After every phase has merged, the feature-wide Testing Gate and the single independent code review
 run exactly once over the integrated feature — per-phase gates are delta review plus scoped
 testing; the feature-wide deep review is the only pass positioned to catch cross-phase integration
@@ -76,6 +83,12 @@ that phase's work not yet committed or pushed — so a human can resolve or abor
 (`plugins/trip/skills/TRIP-auto/SKILL.md`, "Failure handling"). Every other stop condition still
 leaves the feature branch clean and pushed. Worktrees are left in place rather than removed on any
 stop, so a resumed session or a human can inspect or continue from exactly where the run stopped.
+
+A dead or silent merge-slot holder has the same flow-wide blast radius: every other phase is
+stranded behind it. The recovery path is the read-only `workspace-worker` audit plus the four-part
+observable merge test in `phase-scheduling.md`'s **Phase gate and merge** section. A conclusive
+test can release the slot and leave cleanup to a separate worker; an inconclusive test leaves the
+slot held and the worktrees intact for inspection rather than allowing another merge on a guess.
 
 ## Release cleanup — the one cwd exception
 

@@ -1,8 +1,8 @@
 ---
 title: trip plugin
 status: current
-updated: 2026-08-15
-verified-at: 1.5.0
+updated: 2026-08-20
+verified-at: 1.6.0
 links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
@@ -31,6 +31,37 @@ This separation is the **agent routing contract**
 requires explicit `/` invocation because it's either a one-time setup/migration step or an
 autonomy-maximizing path that shouldn't fire on its own judgment. `TRIP-init` hands architecture
 documentation off to [[trip-wiki-plugin]] rather than owning it itself.
+
+## Who waits for whom
+
+`TRIP-auto` is the top-level orchestrator. It invokes a phase skill as a child orchestrator, and
+that child dispatches role workers. The nesting remains deliberate; the fallible boundary is the
+child's report back to its parent, not the on-disk work produced below it.
+
+```text
+TRIP-auto (parent orchestrator)
+        | dispatch
+        v
+TRIP-1/2/3 (child orchestrator) -- report to parent [FALLIBLE] --> TRIP-auto
+        | dispatch
+        v
+trip:<role> worker -- result --> child orchestrator
+        | writes
+        v
+worktree artifacts
+```
+
+Cross-session report delivery failed for a substantial fraction of reports in an observed run, while
+the work survived in its worktree. Every orchestrator therefore follows `agent-routing.md`'s
+**Waiting for a worker** section: waits are bounded and passive, a live worker is never polled or
+pinged for progress, and a missing report is not evidence that work is missing. Completion is
+reconstructed only from validated artifact changes and observable status; the durable artifact
+takes precedence over the fallible report transport.
+
+All 11 named agents carry `disallowedTools: ..., Agent`, so a `trip:<role>` worker structurally
+cannot dispatch sub-workers. A child orchestrator is therefore not one of those named agents. It
+comes from outside the plugin's declared agent set, and the plugin intentionally does not name the
+mechanism that creates it.
 
 ## Worktree parallelism
 
