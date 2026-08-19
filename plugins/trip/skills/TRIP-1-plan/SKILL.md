@@ -38,11 +38,23 @@ Before dispatching planning workers:
       planner and reviewer need to know about, not something to paper over.
 
    Report: wiki-vs-code drift, impacted files, real current callers/dependents, documented
-   conventions, and open unknowns.
+   conventions, and open unknowns. End with `DISCOVERY_COMPLETE` or `DISCOVERY_PARTIAL`.
    ```
 
-   Require that evidence report before dispatching `planner`.
-2. Dispatch `planner` with the feature request, profile, and discovery report. The planner owns clarification proposals and every plan-file edit.
+   Parse the trailing tag when present. During the cached-plugin transition, also accept a
+   complete, coherent untagged evidence report; a missing tag alone does not make an arrived
+   report incomplete. If no usable report arrives, follow `Waiting for a worker` in
+   `agent-routing.md`; never wait unconditionally for a tag. Require the evidence report before
+   dispatching `planner`.
+2. Dispatch `planner` with the feature request, profile, and discovery report. The planner owns
+   clarification proposals and every plan-file edit. Require `PLAN_COMPLETE` or `PLAN_PARTIAL`
+   when the worker supports tags, but accept an untagged report from an older cached plugin
+   install when the plan file shows the required post-dispatch delta and the report names what it
+   changed. If no usable report arrives, follow `Waiting for a worker`; never wait
+   unconditionally for a tag.
+
+Apply that planner report rule to every later planner dispatch in this skill, including review
+fixes and user-requested revisions.
 
 The wiki documents intent; the graph reflects the code as it actually is. If they disagree (undocumented module, stale pattern), note the drift in the plan rather than silently trusting one over the other — and add a to-do to run `/wiki-ingest` after the work lands.
 
@@ -118,9 +130,13 @@ Skip for trivial plans (single-file, low-risk). Run for non-trivial (new module,
 
 1. **Start**: dispatch the configured `plan-reviewer` with read-only access and the plan path. For `codex-bridge`, invoke `codex-plan-review` with explicit model/effort overrides.
 2. **Parse trailing tag**: `APPROVED` -> Step 4. `NEEDS_REWORK` -> surface to user. `REQUEST_CHANGES` -> continue.
-3. **Address findings** — dispatch `planner` to evaluate each P1/P2 and edit legitimate findings. It must document any pushback.
-4. **Collect planner notes** (1-3 sentences): which findings the planner fixed, which it pushed
-   back on and why, plus user decisions or environment limitations.
+3. **Address findings** — dispatch `planner` to evaluate each P1/P2 and edit legitimate findings.
+   It must document any pushback and end with `PLAN_COMPLETE` or `PLAN_PARTIAL` when supported.
+4. **Collect planner notes** (1-3 sentences): parse that tag when present, but accept an untagged
+   report from an older cached plugin install when the plan file shows the required post-dispatch
+   delta and the report names what it changed. If no usable report arrives, follow
+   `Waiting for a worker`; never wait unconditionally for the tag. Record which findings
+   the planner fixed, which it pushed back on and why, plus user decisions or environment limitations.
 5. **Resume**: dispatch `plan-reviewer` again with the same plan path and planner notes. For `codex-bridge`, invoke `codex-plan-review` with those notes and the configured overrides.
    -> back to step 2.
 6. **Cap at 5 rounds** (or user-specified). Surface remaining findings and let user decide.
