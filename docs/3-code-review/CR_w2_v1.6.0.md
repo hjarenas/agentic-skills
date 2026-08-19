@@ -2,9 +2,24 @@
 
 **Review Date**: 2026-08-20
 **Version**: 1.6.0
-**Files Reviewed**:
+**Files Reviewed** (full feature diff, `main...HEAD`; the final round re-examined only the file
+changed since the previous round, marked *):
 
-- `plugins/trip/skills/TRIP-2-implement/phase-scheduling.md`
+- `plugins/trip/references/agent-routing.md`
+- `plugins/trip/skills/TRIP-2-implement/phase-scheduling.md` *
+- `plugins/trip/skills/TRIP-auto/SKILL.md`
+- `plugins/trip/skills/TRIP-1-plan/SKILL.md`
+- `plugins/trip/skills/TRIP-2-implement/SKILL.md`
+- `plugins/trip/skills/TRIP-3-release/SKILL.md`
+- `plugins/trip/agents/discovery.md`
+- `plugins/trip/agents/planner.md`
+- `plugins/trip/.claude-plugin/plugin.json`
+- `docs/1-plans/F_1.6.0_orchestrator-bounded-wait.plan.md`
+- `docs/archi/pages/trip-plugin.md`
+- `docs/archi/pages/worktree-parallelism.md`
+- `docs/2-changelog/w2_v1.6.0.md`
+- `docs/2-changelog/changelog_table.md`
+- `docs/3-code-review/CR_w2_v1.6.0.md`
 
 **Plan**: `docs/1-plans/F_1.6.0_orchestrator-bounded-wait.plan.md`
 
@@ -12,7 +27,7 @@
 
 ## Executive Summary
 
-The change completes the merge-slot recovery audit by ensuring no merge, rebase, or cherry-pick operation remains active before a slot is released. The sole Critical finding was addressed, and the final review found no additional issues. APPROVED
+The change completes the merge-slot recovery audit by ensuring no merge, rebase, or cherry-pick operation remains active before a slot is released. The sole Critical finding was addressed, and the final review found no additional issues. **APPROVED**
 
 ---
 
