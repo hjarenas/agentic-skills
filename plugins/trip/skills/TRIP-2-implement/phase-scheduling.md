@@ -76,7 +76,8 @@ audit**. The orchestrator runs no git itself, as required by `agent-routing.md`'
 boundary**. Give the auditor the recorded expected tip of that specific phase branch and require
 all four observations:
 
-1. `MERGE_HEAD` is absent and the feature worktree is clean.
+1. No in-progress git operation in the feature worktree (`MERGE_HEAD`, `rebase-merge/`,
+   `rebase-apply/`, `CHERRY_PICK_HEAD` all absent) and the worktree is clean.
 2. Feature `HEAD` is a merge commit (two parents), not a fast-forward or some later unrelated
    commit.
 3. The recorded expected tip of that specific phase branch is one of `HEAD`'s parents.
