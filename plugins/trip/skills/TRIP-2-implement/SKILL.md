@@ -68,13 +68,15 @@ fixer, tester, workspace, and downstream `TRIP-3-release` dispatch for this flow
 
 Read `phase-scheduling.md` in this skill's directory in full before dispatching anything: frontier
 computation, parallel per-phase worktrees, the phase gate, merge/cleanup serialization, and
-merge-conflict handling — including two hard rules that must not be relaxed (the merge slot stays
+merge-conflict handling — including three hard rules that must not be relaxed (the merge slot stays
 held through the whole conflict-resolution sub-flow, not just until `WORKSPACE_BLOCKED`;
-`WORKSPACE_COMPLETE` only fires after commit, push, and cleanup all finish). This applies even to a
-single-phase plan: it degenerates to one phase worktree, one phase gate, one merge — no new
-ceremony in practice, since a lone phase never contends for the merge slot or hits a real conflict
-against an unchanged feature branch, but it still goes through this mechanism rather than
-committing directly. Follow it, then continue below at Per-Phase Implementation.
+`WORKSPACE_COMPLETE` only fires after commit, push, and cleanup all finish; a silent merge/cleanup
+worker releases its stuck merge slot only after the phase-specific recovery audit observes that
+phase's merge landed and was pushed). This applies even to a single-phase plan: it degenerates to
+one phase worktree, one phase gate, one merge — no new ceremony in practice, since a lone phase
+never contends for the merge slot or hits a real conflict against an unchanged feature branch, but
+it still goes through this mechanism rather than committing directly. Follow it, then continue
+below at Per-Phase Implementation.
 
 ## Per-Phase Implementation — Delegate to the configured workers
 
