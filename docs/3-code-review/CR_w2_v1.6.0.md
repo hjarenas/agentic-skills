@@ -15,8 +15,10 @@ changed since the previous round, marked *):
 - `plugins/trip/agents/planner.md`
 - `plugins/trip/.claude-plugin/plugin.json`
 - `docs/1-plans/F_1.6.0_orchestrator-bounded-wait.plan.md`
+- `docs/TRIP.md`
 - `docs/archi/pages/trip-plugin.md`
 - `docs/archi/pages/worktree-parallelism.md`
+- `docs/archi/log/v1.6.0.md`
 - `docs/2-changelog/w2_v1.6.0.md`
 - `docs/2-changelog/changelog_table.md`
 - `docs/3-code-review/CR_w2_v1.6.0.md`
