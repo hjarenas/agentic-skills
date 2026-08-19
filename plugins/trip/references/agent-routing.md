@@ -44,6 +44,8 @@ Keep reviewer roles independent from the worker whose artifact they review. A wo
 reused across batches of the same kind, but do not use the implementer as `batch-reviewer` or
 `code-reviewer`, the planner as `plan-reviewer`, or the release worker as `release-verifier`.
 
+Native-only tags (scope: see those agent files): `discovery` ends `DISCOVERY_COMPLETE`/`DISCOVERY_PARTIAL`, `planner` `PLAN_COMPLETE`/`PLAN_PARTIAL`.
+
 ## Routing configuration
 
 Read `docs/TRIP.md` section `Agent routing`. A new project receives this shape:

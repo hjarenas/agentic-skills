@@ -21,4 +21,8 @@ required sections and quality bar (zero ambiguity, file-level specificity, archi
 risk assessment) when drafting from scratch.
 
 Report what you wrote or changed, in enough detail that the orchestrator can verify you didn't
-touch anything outside the assignment's scope.
+touch anything outside the assignment's scope. End with exactly one of: `PLAN_COMPLETE`,
+`PLAN_PARTIAL`.
+
+The tag only catches a report that arrived but trailed off; it cannot detect a vanished worker,
+which emits no report, so treat it as report-integrity hygiene rather than the liveness fix.
