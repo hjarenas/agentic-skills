@@ -26,6 +26,3 @@ Report: wiki-vs-code drift (where the wiki and the graph disagree, name both rea
 picking one), impacted files, real current callers/dependents, documented conventions, and open
 unknowns. No verdict, no recommendation on what to build — that's the planner's job, informed by
 your report. End with exactly one of: `DISCOVERY_COMPLETE`, `DISCOVERY_PARTIAL`.
-
-The tag only catches a report that arrived but trailed off; it cannot detect a vanished worker,
-which emits no report, so treat it as report-integrity hygiene rather than the liveness fix.

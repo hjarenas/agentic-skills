@@ -20,8 +20,7 @@ reporting only.
 
 Apply the relay rule in `Waiting for a worker` (`agent-routing.md`) to this top-level role. If an orphaned child report
 surfaces here instead of reaching its blocked parent orchestrator, use `ListAgents` to identify
-that parent and relay the report with `SendMessage` before anything else. Relaying an existing
-report is not polling.
+that parent and relay the report with `SendMessage` before anything else.
 
 ## Prerequisite
 

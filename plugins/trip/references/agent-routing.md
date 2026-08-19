@@ -186,45 +186,42 @@ what actually gets dispatched, not an aspiration.
 
 ## Waiting for a worker
 
+At dispatch time, record an assignment-specific baseline for every named on-disk output: its path
+and content hash or explicit absence, repository `HEAD`, and its relevant porcelain status line.
+The orchestrator performs this as the read-only repository-status read permitted by its boundary,
+not as worker work. For a first dispatch, record a missing named output as absent. For a read-only
+assignment with no on-disk output, record explicitly that no artifact is expected.
+
 Any turn whose only purpose is to learn whether a dispatched worker has reported counts as waiting:
 re-read status, re-list agents, schedule a timer, or take a no-op turn to check again. Different
 routing work is not waiting.
 
 Arm a duration-bearing background wait whose command exits when about 5 minutes elapse, and whose
 exit notifies the orchestrator. Use `Monitor` on that command, or a backgrounded Bash `until`-loop
-with `sleep`; do not use `Monitor.timeout_ms` for cadence because it
-kills the monitor instead of blocking the caller. End the turn and let the notification or report
-wake the orchestrator. Do not spend a turn spinning or check before a notification arrives.
+with `sleep`; do not use `Monitor.timeout_ms` for cadence because it kills the monitor instead of
+blocking the caller. End the turn and let the notification or report wake the orchestrator.
 
 Leave about 5 minutes between checks. Cap at 3 check turns or about 20 minutes total per dispatch,
 whichever comes first — then inspect the evidence, surface any ambiguity, and let the user decide.
 Do not reset either ceiling for a partial signal, sibling progress, or a child orchestrator saying
-it is still working. Do not use back-to-back checks or invent another mechanism.
+it is still working.
 
 Never ping a child observed as live and still working to ask whether it is done. Absence of a
 report and elapsed time alone do not show that the child stopped; use observed child status, never
 impatience, as the discriminator.
 
 When you dispatch a child and observe it stopped or completed without delivering its result, send
-one direct `SendMessage` telling it to resume from its transcript and deliver the report. This is
-not a re-dispatch, not a re-run of the assignment, and not a ping of a live worker. If it stops
-silently a second time, perform the ordered artifact-and-status check below, then stop and surface.
-Do not re-dispatch the assignment over work that already survives in its phase worktree.
+one direct `SendMessage` telling it to resume from its transcript and deliver the report. If it
+stops silently a second time, perform the ordered artifact-and-status check below, then stop and
+surface. Do not re-dispatch the assignment over work that already survives in its phase worktree.
 
 If you receive a report evidently intended for another agent, forward it to that agent with
 `SendMessage` and record the relay in your own report. Treat a named assignment belonging to
-another agent or a peer-unreachable preamble as evidence of the intended recipient. Relaying is
-not polling: it delivers a result that already exists instead of asking for one.
+another agent or a peer-unreachable preamble as evidence of the intended recipient.
 
 Cross-session messaging is frequently fallible: about one report in three was lost in the observed
 session after its work landed. Treat reconstruction from the surviving artifact as a normal path,
 not an emergency procedure.
-
-At dispatch time, record an assignment-specific baseline for every named on-disk output: its path
-and content hash or explicit absence, repository `HEAD`, and its relevant porcelain status line.
-The orchestrator performs this as the read-only repository-status read permitted by its boundary,
-not as worker work. For a first dispatch, record a missing named output as absent. For a read-only
-assignment with no on-disk output, record explicitly that no artifact is expected.
 
 At the cap, inspect in this order:
 
@@ -251,4 +248,4 @@ confirmation; do not re-run the assignment or apply its result twice.
 
 When stopping, do not retry the dispatch. Report the role and assignment, the completion evidence
 found and missing, every partial artifact path, and the choices to resume from the artifact or
-re-dispatch. Surface these choices and let the user decide.
+re-dispatch. Surface these choices; the user picks one.
