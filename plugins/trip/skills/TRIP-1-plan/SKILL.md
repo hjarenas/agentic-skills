@@ -109,6 +109,9 @@ Alignment, or Risk Assessment, not just that the required sections exist.
 `AskUserQuestion`: "I'll run an independent second-opinion reviewer and iterate until clean. Proceed?"
 Options: "Yes, run review" (recommended) / "Skip review, go to user review" / "Cap iterations at N"
 
+Suppress this prompt when this skill runs as a child of `TRIP-auto`; the parent owns review
+convergence and the interim checkpoint.
+
 Skip for trivial plans (single-file, low-risk). Run for non-trivial (new module, schema/algorithm change).
 
 ### Loop
@@ -142,10 +145,14 @@ After independent review converges (or is explicitly skipped), present a summary
 - **Estimated complexity**: [simple/moderate/complex]
 - **Review status**: [harness/model, APPROVED / skipped / capped with open findings]
 
-Then **use the `AskUserQuestion` tool** to collect feedback:
+In a standalone run, **use the `AskUserQuestion` tool** to collect feedback:
 
 - **Question**: "Please review the plan at `docs/1-plans/F_x.y.z_feature-name.plan.md`. How would you like to proceed?"
 - **Options**: "Approved" (ready for implementation), "Request changes" (I have modifications), "Needs rework" (significant issues to address)
+
+Suppress this prompt when this skill runs as a child of `TRIP-auto`; treat the plan as approved
+once independent review has converged and proceed directly to *Persist the Approved Plan* below,
+so the parent's interim checkpoint can name the feature worktree path.
 
 Handle feedback:
 
@@ -181,7 +188,9 @@ not rely on the caller's current directory. Once cwd is threaded this way, `code
 existing `Path.cwd()`-keyed `.codex-bridge/` state automatically isolates stored Codex reviews
 and reports per worktree; rely on that behavior without adding another isolation mechanism.
 
-Then **use the `AskUserQuestion` tool** to ask:
+In a standalone run, **use the `AskUserQuestion` tool** to ask:
+  - Suppress this prompt when this skill runs as a child of `TRIP-auto`; return the approved plan
+    and worktree details so the parent can continue autonomously.
   - **Question**: "Plan approved and pushed on `<branch>` in worktree `<worktree-path>`. Would you like to start implementation now?"
   - **Options**: "Yes, implement now" (proceed with `TRIP-2-implement` using this plan in that same worktree), "Not yet" (I'll implement later)
 
