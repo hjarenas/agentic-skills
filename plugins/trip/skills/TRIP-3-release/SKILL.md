@@ -172,12 +172,16 @@ Also update relevant sections whenever needed.
 
 ---
 
-After completing all documentation steps, **use the `AskUserQuestion` tool** to ask:
+After completing all documentation steps in a standalone release run, **use the
+`AskUserQuestion` tool** to ask:
 
 - **Question**: "All documentation steps are complete. Ready to commit and open the pull request?"
 - **Options**: "Yes, open the PR" (commit on the feature branch, push, open PR), "Not yet" (review changes first)
 
-**ONLY after user selects "Yes"**, proceed:
+Suppress this prompt when this skill runs as a child of `TRIP-auto`; the parent has already
+authorized proceeding through the release-documentation steps without further confirmation.
+
+In a standalone run, **ONLY after user selects "Yes"**, proceed:
 
 ## Step 9: Commit (on the feature branch)
 
