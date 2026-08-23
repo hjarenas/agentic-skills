@@ -1,6 +1,6 @@
 ---
 name: TRIP-upgrade
-description: Upgrade an existing TRIP project—migrate legacy customized skill copies onto the plugin model, or add missing agent-routing configuration to an existing docs/TRIP.md profile
+description: Upgrade an existing TRIP project—migrate legacy customized skill copies onto the plugin model, add missing agent-routing configuration to an existing docs/TRIP.md profile, and backfill the worktree-bootstrap subsection and the git worktree permission allowlist
 disable-model-invocation: true
 ---
 
@@ -39,18 +39,34 @@ Inspect without modifying:
 
 ```bash
 test -f docs/TRIP.md && grep -n '^## Agent routing$' docs/TRIP.md
+test -f docs/TRIP.md && grep -n 'Bootstrapping a fresh worktree' docs/TRIP.md
 ls -d .claude/skills/TRIP-*/ 2>/dev/null
+test -f .claude/settings.json && grep -n 'Bash(git worktree add:\*)' .claude/settings.json   # must sit under permissions.allow
 test -f .codex/config.toml && sed -n '/^model\|^model_reasoning_effort/p' .codex/config.toml
 ```
 
-Choose exactly one path:
+Path selection is two independent decisions: one structural path, plus each standalone migration
+whose own condition holds.
+
+**Structural path** — choose exactly one:
 
 | State | Path |
 | :--- | :--- |
 | Legacy skills exist | Run the full migration, including routing in Phase 3.1 |
 | `docs/TRIP.md` exists and lacks `## Agent routing` | Run **Profile-only routing migration** below |
-| `docs/TRIP.md` already has `## Agent routing` and no legacy skills exist | Report "already current" and stop without edits |
+| `docs/TRIP.md` already has `## Agent routing` and no legacy skills exist | No structural work — continue to the standalone migrations |
 | Neither exists | Point at `/TRIP-init` and stop |
+
+**Standalone migrations** — the **Worktree bootstrap migration** and the **Git permission
+allowlist migration** below. Each carries its own condition and is individually idempotent, so on
+the legacy, routing, and "no structural work" paths alike, run each one whose condition holds.
+The "Neither exists" row is the exception: it stops immediately and runs nothing, because both
+standalone migrations assume an initialized TRIP project. They are what an already-routed project
+still needs.
+
+Report "already current" and stop when the structural path is "no structural work" **and** both
+standalone migrations' conditions are already satisfied — the bootstrap subsection is present and
+the git allowlist entry is in place.
 
 Never replace or normalize an existing `Agent routing` section automatically. User choices in
 that table are project configuration and must be preserved byte-for-byte unless the user asks
@@ -69,14 +85,15 @@ to change them.
    `docs/TRIP.md` content is otherwise unchanged.
 5. Show the diff and report the inherited model/effort values. Do not commit unless requested.
 
-This path is idempotent: a second `/TRIP-upgrade` sees the section and exits without edits.
-After completing it, skip Phases 1-6 and use the routing items in the post-migration checklist.
+This path is idempotent: a second `/TRIP-upgrade` sees the section and leaves it alone. After
+completing it, continue to the standalone migrations, then skip Phases 1-6 and use the routing
+items in the post-migration checklist.
 
 ### Worktree bootstrap migration
 
-Run this whenever `docs/TRIP.md` § Commands has no "Bootstrapping a fresh worktree" subsection —
-independently of the routing migration above, and on every upgrade path. TRIP runs every flow and
-every parallel phase in a fresh worktree, which contains only tracked files; without this row,
+Run this when `docs/TRIP.md` exists and its § Commands has no "Bootstrapping a fresh worktree"
+subsection; a project with no `docs/TRIP.md` goes to `/TRIP-init` instead. TRIP runs every flow
+and every parallel phase in a fresh worktree, which contains only tracked files; without this row,
 projects with gitignored config or installed dependencies fail their gate inside a worktree for
 reasons unrelated to the change under test.
 
@@ -92,11 +109,12 @@ reasons unrelated to the change under test.
 
 ### Git permission allowlist migration
 
-Also run whenever `.claude/settings.json` lacks the `Bash(git worktree add:*)` entry. Apply
+Run this in an initialized TRIP project — one that has `docs/TRIP.md` — when
+`.claude/settings.json` has no `Bash(git worktree add:*)` entry under `permissions.allow`. Apply
 `TRIP-init` Phase 5b: read the existing settings file, **merge** the allowlist into it, and leave
 every pre-existing entry untouched. Without it, autonomous runs stall on permission prompts for
-the worktree commands TRIP issues on every flow and every parallel phase. Do not allowlist the
-destructive commands Phase 5b names as deliberately excluded.
+the worktree commands TRIP issues on every flow and every parallel phase. Allowlist exactly the
+entries Phase 5b lists; the destructive commands it names stay excluded.
 
 ---
 
@@ -269,6 +287,8 @@ splits it into `docs/archi/` — and update the profile's Architecture row when 
 
 This is a separate decision from the skill migration; if the user declines, everything still
 works against the monolith.
+
+With the full migration done, run each standalone migration above whose condition still holds.
 
 ---
 
