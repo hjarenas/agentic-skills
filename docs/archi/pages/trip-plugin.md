@@ -1,8 +1,8 @@
 ---
 title: trip plugin
 status: current
-updated: 2026-08-20
-verified-at: 1.6.0
+updated: 2026-08-23
+verified-at: 1.7.0
 links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
@@ -71,6 +71,16 @@ running phase batch loops in parallel and merging them back one at a time. See
 [[worktree-parallelism]] for the full mechanism, including the serialized merge slot,
 conflict-in-place resolution, and the `TRIP-3-release` cleanup exception.
 
+Two workers dispatched into the *same* worktree get nothing from it — they share one working tree
+and one git index — so `agent-routing.md` adds a second, finer unit: a **lane**, one worker's
+exclusive writable path set for one dispatch. The six worker agent definitions that can be
+dispatched concurrently (`implementer`, `fixer`, `planner`, `test-worker`, `release-worker`,
+`workspace-worker`) each point at that section rather than restating it, using the shared `lane` /
+`rewrite forward` / `destructive git` vocabulary. Where no disjoint lane can be drawn, the workers
+are serialized instead. The same contract denies destructive git (`git stash`, `git checkout --
+<path>`, `git restore`, `git reset --hard`, `git clean`) to every role, because a TRIP working tree
+often holds the only copy of the work so far. See [[worktree-parallelism]].
+
 ## Named per-role subagents, not `general-purpose`
 
 Every worker role (`discovery`, `planner`, `plan-reviewer`, `implementer`, `batch-reviewer`,
@@ -100,6 +110,15 @@ three-way reconciliation; `TRIP-upgrade` exists to migrate projects off that mod
 tagging happens only *after* the user merges on GitHub (`TRIP-3-release` Step 11). `TRIP-auto`'s
 Phase 4 explicitly documents this as replacing an earlier push-to-main flow. (Both skills'
 descriptions said "ff-merge" until 2026-08-11; fixed to say "pull request.")
+
+Step 10 checks for a stale base with `git fetch` plus `git merge-tree` and stops on
+`WOULD CONFLICT` — first in the step, before `gh pr create` runs. A flow can run for hours while
+other work merges, and the first anyone learns of a stale base is usually a conflicted pull request
+the user has to point out; the check moves that discovery ahead of opening the PR. A conflict is
+handed back to an `implementer` lane plus a re-run of the testing gate rather than a quick rebase,
+because the resolution rewrites reviewed, gate-verified content. The artifact-writing steps themselves fan out across three lane-scoped
+`release-worker` dispatches, with one `release-verifier` over the combined diff — see
+[[worktree-parallelism]].
 
 ## Codex is stateless
 

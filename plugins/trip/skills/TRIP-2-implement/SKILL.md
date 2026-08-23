@@ -58,6 +58,20 @@ as soon as the plan is approved, so the common case is that the worktree **alrea
   ```
   Preserve the plan file inside that worktree before implementation begins.
 
+**Bootstrap every newly created worktree** — here, and per phase in `phase-scheduling.md`. A
+worktree carries only tracked files, so gitignored config and installed dependencies are absent
+until bootstrapped, and a gate run before then fails for reasons unrelated to the change while
+looking exactly like a real regression. Have the `workspace-worker` that created the worktree go
+on to run the **bootstrap** command from `docs/TRIP.md` § Commands → "Bootstrapping a fresh
+worktree" and report its exit status. A worktree resolved as *already existing* was bootstrapped
+when it was created, so it is ready as found.
+
+A bootstrap failure is a blocked worktree, reported as such — it says nothing about the phase's
+code. Where the profile has no bootstrap row at all, the project predates it: run the gate once,
+and if it fails on missing environment rather than on the change, have the user record the row via
+`/TRIP-init` or `/TRIP-upgrade`, which keeps setup in the profile where every future flow reads
+it.
+
 If already inside the correct flow worktree (for example, when resuming), continue there. Carry
 the resolved worktree path explicitly as the working directory in every implementer, reviewer,
 fixer, tester, workspace, and downstream `TRIP-3-release` dispatch for this flow.

@@ -23,5 +23,11 @@ green on nothing.
 Never weaken a gate, exclude coverage, or change product code to make a test pass — report product
 failures for the requester's fixer to handle instead.
 
+**Stay in your lane** — the writable paths your assignment names. Read anything; scope every
+formatter and linter run to your own files; leave the git index to `workspace-worker`. To undo an
+edit of your own, **rewrite forward**: write the intended content again. Where you judge the tree
+itself must be reset, report that with your blocked tag and stop. See `agent-routing.md` §Lanes
+and §Destructive git.
+
 Report: exact commands run, pass/fail/error counts, new tests added (if any), and any
 integration/manual checks performed. End with exactly one of: `TESTS_GREEN`, `TESTS_RED`.

@@ -59,11 +59,35 @@ Any failure blocks the release — fix or return to `TRIP-2-implement` first.
 
 ## Steps 1-8: Prepare release artifacts
 
-Dispatch `release-worker` (`codex-release` for `codex-bridge`) with the plan, `docs/TRIP.md`,
-approved review, and Steps 1-8 below.
-It owns every file edit and command in these steps. When it reports completion, dispatch
-`release-verifier` (`codex-release-verify`) read-only to check versions, placeholders, changelog links, wiki lint, README,
-branch safety, and the full diff. Route corrections back to `release-worker`, then re-verify.
+`release-worker` (`codex-release` for `codex-bridge`) owns every file edit and command in these
+steps, dispatched with the plan, `docs/TRIP.md`, the approved review, and the steps below. When
+the artifacts are complete, dispatch `release-verifier` (`codex-release-verify`) read-only to
+check versions, placeholders, changelog links, wiki lint, README, branch safety, and the full
+diff. Route corrections back to `release-worker`, then re-verify.
+
+**These steps are not one serial dispatch.** Release is the tail of every flow and the phase most
+often left waiting on a single worker grinding through eight unrelated edits, with the wiki
+update (Step 7) usually dominating. Most of the steps write disjoint files, so schedule them as:
+
+1. **Step 1 alone, first.** It writes nothing and computes the date and project week every other
+   step needs. Carry its output explicitly into each dispatch below.
+2. **Then Steps 2, 3, 5-8 as three parallel `release-worker` dispatches**, split by write path:
+   - version files and lockfiles (Step 2) + `README.md` (Step 8);
+   - `docs/3-code-review/` (Step 3) + `docs/2-changelog/` (Steps 5 and 6, same worker: the table
+     entry links the changelog file, so one worker writing both keeps them consistent);
+   - `docs/archi/` via `/wiki-ingest` (Step 7) — usually the long pole, so start it in this round
+     rather than after.
+3. **Then Step 4**, the commit message, which describes what the other steps produced.
+
+All three run in the one feature worktree, so give each a **lane** (`agent-routing.md` §Lanes) —
+the path sets listed above are already disjoint, so state them as lanes and dispatch. Staging and
+committing belong to Step 9's single dispatch, after all three have reported. If any dispatch
+reports work it could only do outside its lane, serialize the remainder rather than widening a
+lane mid-flight: a corrupted release artifact costs more than a slow release.
+
+Run `release-verifier` once, after all of Steps 1-8 have landed, over the combined diff. Verifying
+per-worker would miss the cross-file consistency (version vs changelog vs README) that is the main
+thing worth checking.
 
 ### Step 1: Get Current Date/Week
 
@@ -196,7 +220,24 @@ git add -A && git commit -m "<commit message from Step 4>"
 
 ## Step 10: Push the branch and open the pull request
 
-Dispatch push and PR creation to `release-worker`. Dispatch `release-verifier` to inspect the
+**First, check the branch is not stale against the main branch.** A TRIP flow can run for hours
+while other work merges, and the first anyone learns of it is usually a conflicted PR the user has
+to point out. Have `release-worker` fetch and compare before pushing:
+
+```bash
+git fetch origin <main branch — docs/TRIP.md § Project>
+git rev-list --count HEAD..origin/<main branch>          # commits on main we don't have
+git merge-tree --write-tree HEAD origin/<main branch> >/dev/null 2>&1 || echo "WOULD CONFLICT"
+```
+
+If the count is 0, proceed. If main has moved but the trees merge cleanly, proceed and note it in
+the PR description — GitHub will merge it. On `WOULD CONFLICT`, report `RELEASE_BLOCKED` with the
+conflicting paths and hand them back through the flow: an `implementer` lane scoped to those files,
+then a re-run of the testing gate, then return here. That is the route `phase-scheduling.md` uses
+for a phase merge conflict, and it applies for the same reason — a resolution rewrites reviewed,
+gate-verified content, so it earns review and a gate of its own rather than a quick rebase.
+
+Then dispatch push and PR creation to `release-worker`. Dispatch `release-verifier` to inspect the
 resulting PR metadata and URL before reporting it.
 
 ```bash

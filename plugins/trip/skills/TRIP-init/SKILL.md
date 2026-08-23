@@ -174,6 +174,34 @@ yours, and no plugin update will touch it.
 Omit any row the project genuinely does not have — an absent row is honest, a placeholder
 is a trap.
 
+### Bootstrapping a fresh worktree
+
+| Purpose | Command |
+| :--- | :--- |
+| bootstrap | `<...>` |
+
+Every TRIP flow and every parallel implementation phase runs in a fresh `git worktree`, which
+contains **only tracked files**. Anything gitignored or generated does not exist there, so a gate
+that passes in the primary tree can fail in a worktree for reasons that have nothing to do with the
+change. Work out what this project needs and record it as one runnable command (chain steps with
+`&&`); omit the row only if a fresh worktree genuinely runs the gate green with no preparation.
+
+Determine it by inspecting `.gitignore` against what the lint/typecheck/test commands actually
+read. The usual three cases:
+
+- **Gitignored config the test or run commands read** — `.env`, `local.settings.json`,
+  `appsettings.Development.json`. Copy from the primary tree rather than regenerating, so the
+  worktree tests against the same values.
+- **Installed dependencies** — `node_modules/`, `vendor/`. Needs a real install command. Note
+  which package manager and lockfile.
+- **Tool-managed environments** — a `.venv` restored automatically by `uv run`/`poetry run`, or a
+  Go/Cargo module cache. Often needs nothing; confirm rather than assume.
+
+Also record anything **shared per machine rather than per worktree**, so no flow tries to stand up a
+second copy or tears down one another flow is using — a Docker daemon and its containers, a
+database on a fixed port, or a fixed-port dev server. Note the port-collision consequence: parallel
+phases cannot each bind the same port, so per-worktree runs must use ephemeral ports or containers.
+
 ## Agent routing
 
 Invocation arguments override this table for the current run. Blank model or effort means the
@@ -292,6 +320,51 @@ profile.
 
 ---
 
+## Phase 5b: Pre-approve the git commands TRIP runs
+
+TRIP's worktree-per-flow model runs `git worktree` constantly, and every one of those calls
+otherwise raises a permission prompt. In an autonomous run (`/TRIP-auto`) that is worse than
+noise: the flow stalls waiting on approvals the user expected not to be asked for, and phases that
+should run in parallel serialize behind the prompts.
+
+Add an allowlist to the project's `.claude/settings.json`. **Read the existing file first and
+merge into it**, preserving every entry the project already has:
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(git worktree add:*)",
+      "Bash(git worktree list:*)",
+      "Bash(git worktree remove:*)",
+      "Bash(git worktree prune:*)",
+      "Bash(git branch:*)",
+      "Bash(git merge --no-ff:*)",
+      "Bash(git merge-base:*)",
+      "Bash(git ls-remote:*)",
+      "Bash(git fetch:*)",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git status:*)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git show:*)"
+    ]
+  }
+}
+```
+
+The allowlist deliberately stops short of **destructive git** (`agent-routing.md` §Destructive
+git) and `git push --force`. No TRIP role runs those, so a prompt for one means something has
+already gone wrong — leave them prompting, where the user sees them.
+
+Tell the user what was added and why, and mention they can narrow it. If the project's gate
+commands also prompt routinely (a package manager, a container CLI), offer to add those too, but
+list them explicitly rather than allowlisting a whole tool.
+
+---
+
 ## Phase 6: Create the supporting files
 
 ### `docs/2-changelog/changelog_table.md`
@@ -333,6 +406,8 @@ codebase, and coverage requirements — or "Not defined". Do not invent a thresh
 - [ ] Tutorial preference recorded (and `docs/5-tuto/` created if enabled)
 - [ ] `docs/3-code-review/checklist.md` installed and tailored
 - [ ] `docs/3-code-review/cr-template.md` installed, section names matching the checklist
+- [ ] `docs/TRIP.md` § Commands has a "Bootstrapping a fresh worktree" subsection (or its absence is deliberate)
+- [ ] `.claude/settings.json` git allowlist merged in, destructive commands left un-allowlisted
 - [ ] `docs/2-changelog/changelog_table.md` initialized
 - [ ] `docs/4-unit-tests/TESTING.md` written against the actual test setup
 - [ ] No TRIP skill file was edited — they are read-only, and the profile replaced the need

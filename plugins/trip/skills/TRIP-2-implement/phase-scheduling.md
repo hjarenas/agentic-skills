@@ -22,6 +22,8 @@ git worktree add ../<repo>-<slug>-<suffix>-phase-<n> \
   -b feat/<slug>-<suffix>-phase-<n> feat/<slug>-<suffix>
 ```
 
+Have each worker **bootstrap** the phase worktree it just created, per `SKILL.md`'s worktree step.
+
 Use the corresponding `fix/` prefix when the flow branch uses it. The phase branch name must be
 flat and hyphen-joined; never use `feat/<slug>-<suffix>/phase-<n>`, because the existing feature
 ref is a file in git's ref hierarchy and cannot also be a parent directory. Creating a differently
@@ -105,7 +107,7 @@ in the files, unmerged entries in the index — unless explicitly aborted, so on
 `workspace-worker` must **not** run `git merge --abort`. It reports `WORKSPACE_BLOCKED` with the
 conflicting file list while the merge stays in progress; this is an intermediate status within that
 phase's still-open merge attempt, not a terminal outcome, and the phase's merge slot from above
-stays held throughout. Route an `implementer` scoped only to the conflicting files to resolve them
+stays held throughout. Route an `implementer` whose lane is the conflicting files alone to resolve them
 directly in the feature-branch worktree, which is mid-merge: the implementer edits the
 conflict-marked files to their correctly resolved content and removes the conflict markers (the
 phase worktree is discarded regardless). Re-run the normal phase gate over that resolution —

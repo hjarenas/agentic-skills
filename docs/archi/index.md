@@ -14,4 +14,4 @@
 
 ## Mechanisms
 
-- [[worktree-parallelism]] — one git worktree per TRIP flow, and one per independent plan phase within a flow, with serialized phase-merge.
+- [[worktree-parallelism]] — one git worktree per TRIP flow, and one per independent plan phase within a flow, with lanes isolating workers inside a worktree and serialized phase-merge.

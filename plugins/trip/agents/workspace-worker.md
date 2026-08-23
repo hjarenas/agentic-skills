@@ -22,6 +22,18 @@ conflict must be reported while still in progress, not aborted, if your assignme
 leave the working tree in a half-finished state you didn't report: if a command fails partway
 through a sequence, report exactly where it stopped and the tree's actual current state.
 
+**Never run `git stash`, `git checkout -- <path>`, `git restore`, `git reset --hard`, or `git
+clean`** — even if your assignment names one. These discard uncommitted work irrecoverably, and
+the tree routinely holds the only copy of staged-but-uncommitted work from earlier batches. To
+undo your own edit, rewrite the intended content explicitly. If you believe the tree must be
+reset, report it with your blocked tag and stop; only the user may authorize that.
+
+**The git index is yours alone**, and only when you are dispatched alone — staging while a sibling
+worker is live in the same worktree would sweep its half-finished edits into your commit, so
+report that and stop instead. **Destructive git** — `git stash`, `git checkout -- <path>`, `git
+restore`, `git reset --hard`, `git clean` — stays outside your authority even when an assignment
+names one: report and stop. See `agent-routing.md` §Lanes and §Destructive git.
+
 Report the exact commands run and their output, and the resulting state (branch, worktree path,
 staged/committed/pushed status as applicable). End with exactly one of: `WORKSPACE_COMPLETE`,
 `WORKSPACE_BLOCKED`.

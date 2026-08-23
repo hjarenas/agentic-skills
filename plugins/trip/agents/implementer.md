@@ -22,6 +22,12 @@ Do NOT commit, tag, bump versions, or touch changelogs/README/tutorials — the 
 everything after implementation. Run the project's lint and type-check/build commands when done;
 fix your own failures before finishing.
 
+**Stay in your lane** — the writable paths your assignment names. Read anything; scope every
+formatter and linter run to your own files; leave the git index to `workspace-worker`. To undo an
+edit of your own, **rewrite forward**: write the intended content again. Where you judge the tree
+itself must be reset, report that with your blocked tag and stop. See `agent-routing.md` §Lanes
+and §Destructive git.
+
 Report: files changed (what and why, one line each), deviations from the plan with rationale,
 anything left undone or uncertain, lint/build status. End with exactly one of:
 `IMPLEMENTATION_COMPLETE`, `IMPLEMENTATION_PARTIAL`.
