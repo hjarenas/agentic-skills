@@ -17,6 +17,12 @@ route back through the orchestrator to a fresh reviewer, not through your own ju
 use a fix as an opportunity to also clean up unrelated things you notice; flag them in your report
 instead, don't act on them.
 
+**Stay in your lane** — the writable paths your assignment names. Read anything; scope every
+formatter and linter run to your own files; leave the git index to `workspace-worker`. To undo an
+edit of your own, **rewrite forward**: write the intended content again. Where you judge the tree
+itself must be reset, report that with your blocked tag and stop. See `agent-routing.md` §Lanes
+and §Destructive git.
+
 Report the exact diff of what you changed, mapped to which finding it addresses, and confirm
 nothing outside the requested scope was touched. End with exactly one of: `FIX_COMPLETE`,
 `FIX_PARTIAL`.

@@ -168,6 +168,43 @@ parallel when the harness permits it; serialize roles that consume one another's
 Independent roles explicitly include independent implementation phases: dispatch one isolated
 batch loop per phase in the current dependency frontier, in parallel when the harness permits it.
 
+### Lanes
+
+A **lane** is one worker's exclusive set of writable paths for one dispatch. Isolation in TRIP
+comes from two mechanisms at different scales: a worktree isolates a *phase*, and a lane isolates a
+*worker* inside a worktree. Two workers running at once in one worktree share a working tree and a
+git index, so the worktree grants them nothing — only lanes do.
+
+Whenever a dispatch joins a worktree that already has a live worker, give each a lane: state its
+paths as contract item 3, name the sibling's paths as the sibling's, and confirm the two sets are
+disjoint. The common case is a `planner` amending the plan document beside an `implementer`
+writing code; lanes make that safe, with the planner's lane being the plan file alone. Where the
+sets would overlap, serialize the dispatches instead — lanes are the licence for concurrency, so
+no lane means no concurrency.
+
+Inside a lane a worker writes its own paths, reads anything, and scopes every formatter and linter
+run to its own files. The git index sits outside every lane: it belongs to `workspace-worker`,
+dispatched alone. Those two boundaries carry the whole rule, because each failure they prevent is
+silent — a tree-wide formatter rewrites files a sibling holds mid-edit, `git add -A` sweeps a
+sibling's half-finished work into a commit, and two workers on one file overwrite each other. None
+surfaces as an error; all three surface later as a defect nobody can trace.
+
+### Destructive git
+
+**Destructive git** is the command class that discards uncommitted work: `git stash`, `git
+checkout -- <path>`, `git restore`, `git reset --hard`, `git clean`. No role runs them — worker or
+orchestrator, assignment naming one or not. TRIP earns this hard guardrail: projects on this
+workflow may defer committing until release, so the working tree routinely holds the only copy of
+every batch landed so far, and one such command ends the flow's work with no recovery path.
+
+The positive target, and the reason the ban costs nothing: **rewrite forward**. A worker reaching
+for destructive git is nearly always undoing its own edit, and the way to undo an edit is to write
+the intended content again. That reaches the same end state, leaves every sibling's work intact,
+and is what the report can then describe. Where a worker judges that the tree itself must be
+reset, it reports that with its blocked tag and stops, leaving the decision to the user — a
+worker's judgment that the work at risk is worthless has been wrong before, and the loss is
+silent.
+
 **Scope every worker-run test command explicitly** — never leave a `test-worker` (or an
 `implementer`/`fixer` running its own verification) to decide how much of the suite to run. A
 `subagent`-harness worker's own long-running command is subject to the Bash tool's force-background

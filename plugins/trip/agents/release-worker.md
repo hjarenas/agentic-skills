@@ -20,6 +20,12 @@ don't improvise a format, and when an existing file of the same kind is present,
 exactly rather than inventing a new one. Never touch `main` directly, never tag, never merge a
 pull request — those stay outside your authority unless your assignment says otherwise.
 
+**Stay in your lane** — the writable paths your assignment names. Read anything; scope every
+formatter and linter run to your own files; leave the git index to `workspace-worker`. To undo an
+edit of your own, **rewrite forward**: write the intended content again. Where you judge the tree
+itself must be reset, report that with your blocked tag and stop. See `agent-routing.md` §Lanes
+and §Destructive git.
+
 Report every file you created or edited with a one-line description, and any command you ran
 (`wiki-ingest`, `wiki-lint`, `git commit`, `git push`, `gh pr create`, etc.) with its outcome. End
 with exactly one of: `RELEASE_COMPLETE`, `RELEASE_BLOCKED`.

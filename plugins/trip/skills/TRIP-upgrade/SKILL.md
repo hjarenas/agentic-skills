@@ -72,6 +72,32 @@ to change them.
 This path is idempotent: a second `/TRIP-upgrade` sees the section and exits without edits.
 After completing it, skip Phases 1-6 and use the routing items in the post-migration checklist.
 
+### Worktree bootstrap migration
+
+Run this whenever `docs/TRIP.md` § Commands has no "Bootstrapping a fresh worktree" subsection —
+independently of the routing migration above, and on every upgrade path. TRIP runs every flow and
+every parallel phase in a fresh worktree, which contains only tracked files; without this row,
+projects with gitignored config or installed dependencies fail their gate inside a worktree for
+reasons unrelated to the change under test.
+
+1. Read `.gitignore` and the § Commands lint/typecheck/test commands, and work out what a fresh
+   worktree would be missing — see `TRIP-init`'s "Bootstrapping a fresh worktree" for the three
+   usual cases and for what is shared per machine rather than per worktree.
+2. Add the subsection with a single runnable `bootstrap` command. Omit it only if a fresh worktree
+   genuinely runs the gate green with no preparation.
+3. **Verify it in a throwaway worktree** rather than reasoning about it: create one, run the
+   bootstrap command, run the project's gate, then remove the worktree. Reasoning alone routinely
+   misses a gitignored file that only one test reads.
+4. Show the diff. Do not commit unless requested.
+
+### Git permission allowlist migration
+
+Also run whenever `.claude/settings.json` lacks the `Bash(git worktree add:*)` entry. Apply
+`TRIP-init` Phase 5b: read the existing settings file, **merge** the allowlist into it, and leave
+every pre-existing entry untouched. Without it, autonomous runs stall on permission prompts for
+the worktree commands TRIP issues on every flow and every parallel phase. Do not allowlist the
+destructive commands Phase 5b names as deliberately excluded.
+
 ---
 
 ## Phase 1: Inventory
@@ -256,5 +282,7 @@ works against the monolith.
 - [ ] Tuned Codex model/effort moved to `.codex/config.toml`
 - [ ] Local `TRIP-*` and `codex-*` skill copies removed, in their own commit
 - [ ] `.codex-bridge/` added to `.gitignore`
+- [ ] `docs/TRIP.md` § Commands has a "Bootstrapping a fresh worktree" subsection, verified in a throwaway worktree
+- [ ] `.claude/settings.json` git allowlist merged in, pre-existing entries preserved
 - [ ] `/wiki-migrate` run, or explicitly declined
 - [ ] A TRIP command exercised end to end to confirm the profile is actually read

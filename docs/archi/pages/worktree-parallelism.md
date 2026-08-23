@@ -1,8 +1,8 @@
 ---
 title: Worktree parallelism
 status: current
-updated: 2026-08-20
-verified-at: 1.6.0
+updated: 2026-08-23
+verified-at: 1.7.0
 links: [trip-plugin, codex-bridge-plugin]
 ---
 
@@ -44,6 +44,55 @@ is invalid.
 `TRIP-1-plan`'s plan review validates the dependency graph before presentation: at least one phase
 must say `Depends on: none`, and the graph must have no cycles, or `TRIP-2-implement` could be
 left with unmerged phases and an empty frontier.
+
+## Lanes — isolation inside a worktree
+
+A worktree isolates a **phase**; it grants nothing to two workers dispatched into the *same*
+worktree, because they share one working tree and one git index. The unit that isolates those
+workers is the **lane**: one worker's exclusive writable path set for one dispatch, defined in
+`plugins/trip/references/agent-routing.md`'s **Lanes** section (added in `trip` 1.7.0). Lanes are
+the second, finer isolation scale beneath the worktree, and every parallel dispatch into a shared
+worktree carries one.
+
+Three failure modes motivated it, all observed downstream and all silent — nothing errors, the
+work is simply wrong afterwards: a tree-wide formatter rewriting a sibling's mid-edit files, a
+`git add -A` sweeping a sibling's half-finished work into a commit, and two workers writing the
+same file. Before lanes existed the contract was written by hand, per dispatch, as "another agent
+is concurrently editing X — do not touch" — 86 such warnings across the mined transcripts.
+
+Two rules close the mechanism:
+
+- **The git index sits outside every lane.** It belongs to `workspace-worker`, which is always
+  dispatched alone — which is why the serialized merge slot below is a separate mechanism rather
+  than just another lane.
+- **No lane ⇒ no concurrency.** A set of workers whose writable paths cannot be made disjoint is
+  serialized instead of parallelized.
+
+## Destructive git is banned in every worktree
+
+`git stash`, `git checkout -- <path>`, `git restore`, `git reset --hard` and `git clean` are
+denied to every role (`plugins/trip/references/agent-routing.md`, **Destructive git**). The reason
+is specific to this flow shape: a TRIP project may defer committing until release, so a phase
+worktree's working tree routinely holds the **only** copy of every batch completed so far, and
+these commands are exactly the ones that discard it. The positive replacement is to **rewrite
+forward** — undo an edit by writing the intended content again. The `TRIP-init` git allowlist
+(below) deliberately excludes these commands and `git push --force` so they keep prompting.
+
+## Bootstrapping a fresh worktree
+
+A worktree checkout carries only **tracked** files, so gitignored configuration (`.env`) and
+installed dependencies (`node_modules`) are absent in every newly created flow or phase worktree,
+and the gate that then fails is indistinguishable from a real regression. `TRIP-init` therefore
+records a per-project **"Bootstrapping a fresh worktree"** subsection in `docs/TRIP.md`
+(`plugins/trip/skills/TRIP-init/SKILL.md`), read by `plugins/trip/skills/TRIP-2-implement/SKILL.md`
+and its `phase-scheduling.md` whenever a worktree is created; `TRIP-upgrade` migrates existing
+profiles. The same subsection records what is shared **per machine** rather than per worktree —
+Docker daemons, fixed host ports — which is the constraint that decides whether two phase
+worktrees can actually run their gates at once.
+
+`TRIP-init` Phase 5b additionally writes a git permission allowlist covering `git worktree`, which
+was never pre-approved: autonomous runs stalled on permission prompts and parallel phases
+serialized behind the approvals rather than behind any real dependency.
 
 ## Phase gate and serialized merge
 
@@ -89,6 +138,23 @@ stranded behind it. The recovery path is the read-only `workspace-worker` audit 
 observable merge test in `phase-scheduling.md`'s **Phase gate and merge** section. A conclusive
 test can release the slot and leave cleanup to a separate worker; an inconclusive test leaves the
 slot held and the worktrees intact for inspection rather than allowing another merge on a guess.
+
+## Release fan-out
+
+`TRIP-3-release` Steps 1-8 ran as one serial dispatch even though most of those steps write
+disjoint files. Since `trip` 1.7.0 (`plugins/trip/skills/TRIP-3-release/SKILL.md`) Step 1 runs
+alone, then **three lane-scoped `release-worker` dispatches run in parallel** in the one feature
+worktree — version + README, code review + changelog, and `wiki-ingest` (the long pole) — followed
+by Step 4. The lanes are what makes sharing the worktree safe; see **Lanes** above. Verification
+does not fan out with the writing: a single `release-verifier` still reviews the combined diff.
+
+Step 10 runs `git fetch` plus `git merge-tree` against the main branch before pushing and stops on
+`WOULD CONFLICT` rather than rebasing. The check runs first in that step, ahead of `gh pr create`:
+a flow can run for hours while other work merges, and the first anyone learns of a stale base is
+usually a conflicted pull request the user has to point out, so the check moves that discovery
+earlier — before the PR is opened. A conflict routes back through an `implementer` lane and a
+re-run of the testing gate rather than a quick rebase, because resolving it rewrites reviewed,
+gate-verified content and so earns review and a gate of its own.
 
 ## Release cleanup — the one cwd exception
 

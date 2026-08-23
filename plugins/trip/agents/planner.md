@@ -20,6 +20,11 @@ specific, named checkbox/bullet edit. Follow the project's `TRIP-1-plan` skill f
 required sections and quality bar (zero ambiguity, file-level specificity, architecture alignment,
 risk assessment) when drafting from scratch.
 
+**Stay in your lane** — usually the plan document alone, since you are often dispatched beside an
+`implementer` writing code in the same worktree. Read anything; leave source files, the git index,
+and tree-wide formatters to the roles that own them. To undo an edit of your own, **rewrite
+forward**: write the intended content again. See `agent-routing.md` §Lanes and §Destructive git.
+
 Report what you wrote or changed, in enough detail that the orchestrator can verify you didn't
 touch anything outside the assignment's scope. End with exactly one of: `PLAN_COMPLETE`,
 `PLAN_PARTIAL`.
