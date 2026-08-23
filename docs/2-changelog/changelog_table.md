@@ -2,12 +2,23 @@
 
 | Version   | Week | Commit Message                  |
 | --------- | ---- | -------------------------------- |
+| `1.7.1`   | 3    | fix(trip): make TRIP-upgrade standalone migrations reachable |
 | `1.7.0`   | 2    | feat(trip): add worker lanes, worktree bootstrap and release fan-out |
 | `1.6.0`   | 2    | feat(trip): add orchestrator bounded-wait and lost-report recovery contract |
 | `0.2.0`   | 1    | feat(trip): add git-worktree-based flow and phase parallelism |
 | `0.1.0`   | 1    | chore: initialize TRIP workflow |
 
 # Changelog Summary
+
+- **v1.7.1 (Reachable TRIP-upgrade Standalone Migrations — Week 3, 24-08-2026)**:
+  - **`trip` (1.7.0 → 1.7.1)**: patch fixing a defect in 1.7.0 — the two standalone `TRIP-upgrade` migrations it added (worktree-bootstrap subsection, `git worktree` permission allowlist) claimed to run "on every upgrade path", but nothing implemented that and they were unreachable for exactly the projects needing them
+  - **Two traps**: Phase 0's path table stopped every project already on 1.5.0/1.6.0 with "already current" and no edits; and the Profile-only routing migration ends by skipping Phases 1-6, which both new sections sat after. Confirmed against a real downstream project (`crm`): `## Agent routing` present, no legacy skills, no git allowlist — it needed the allowlist migration and could not reach it
+  - **The fix**: Phase 0 now makes two independent decisions — a **structural path** (one of four table rows) and **standalone migrations**, each run when its own condition holds, on the legacy, routing and "no structural work" paths alike; the "already current" no-op exit survives but now also requires both standalone conditions satisfied, the routing migration hands off before skipping Phases 1-6, and Phase 6 gained the same hand-off for the legacy path
+  - **A Major regression the fix introduced, caught by review**: a blanket "every structural path" clause conflicted with the "Neither exists → `/TRIP-init` and stop" row, and both migration conditions held *vacuously* on an uninitialized project (a nonexistent `docs/TRIP.md` trivially "has no" bootstrap subsection; the allowlist condition never mentioned `docs/TRIP.md`), so an agent could have written a git allowlist into a repo TRIP was never initialized in — closed redundantly with a Phase 0 carve-out *and* a precondition inside each migration
+  - **Probe/condition mismatch**: Phase 0 grepped `git worktree add` while the condition is `Bash(git worktree add:*)` under `permissions.allow`, so a `deny`/`ask` entry would have silently skipped the migration; probe and condition now match. The frontmatter `description` now names both migrations, which is what makes them discoverable
+  - **Files Reviewed is derived, not recalled** (`TRIP-3-release`, late addition to the same patch): Step 3.3 now names the source of a code review's **Files Reviewed** list — reconcile `git status --short` against `git diff --cached --name-only`, count the paths, confirm all are listed (release artifacts included, since the CR predates the release commit), and record which subset each review round re-examined; Step 3.5 gained a matching completeness check. The list came up short in three consecutive releases — corrected after 1.6.0 in `af1f8cb`, again during 1.7.0, and again in this release's own verification — because Step 3 never said where it came from
+  - **Bookkeeping**: `docs/TRIP.md`'s `Current version` line, drifted at two consecutive releases, is updated to 1.7.1 and belongs in every release from here on
+  - **Code review**: independent `code-reviewer`, 2 rounds -> APPROVED (1 Major, 2 Minor, 2 Suggestions, all addressed) (`docs/3-code-review/CR_w3_v1.7.1.md`)
 
 - **v1.7.0 (Worker Lanes, Worktree Bootstrap and Release Fan-Out — Week 2, 23-08-2026)**:
   - **`trip` (1.6.0 → 1.7.0)**: closed five framework gaps found by mining 37 downstream Claude Code transcripts for tool-result error traces rather than user corrections — each gap had been worked around by hand in per-dispatch prompts

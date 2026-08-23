@@ -124,11 +124,17 @@ Now that week (`a`) and version (`x.y.z`) are known:
    - **Turn 1 convergence**: the stored review is the full review already.
    - **Skipped Codex**: write CR from `docs/3-code-review/cr-template.md` with body "Code review skipped — trivial change." Verdict: `APPROVED with observations`.
 
-3. Replace `<x.y.z>` with actual version. Fill any remaining `<...>` placeholders.
+3. Replace `<x.y.z>` with actual version. Fill any remaining `<...>` placeholders. Derive
+   **Files Reviewed** from the real change set — reconcile `git status --short` against
+   `git diff --cached --name-only`, count the paths, and confirm every one is listed before
+   saving. The CR is written before the release commit exists, so that set covers the release
+   artifacts (changelog, wiki, version files, the CR itself) as well as the feature files; note
+   which subset each review round actually re-examined.
 
 4. Save to `docs/3-code-review/CR_wa_vx.y.z.md`.
 
-5. Verify: no `<...>` placeholders, no `PROMOTION_READY`, version matches version file.
+5. Verify: no `<...>` placeholders, no `PROMOTION_READY`, version matches version file, **Files
+   Reviewed** count matches the reconciled change set.
 
 ### Step 4: Commit Message
 

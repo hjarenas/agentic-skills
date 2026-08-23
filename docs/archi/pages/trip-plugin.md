@@ -1,8 +1,8 @@
 ---
 title: trip plugin
 status: current
-updated: 2026-08-23
-verified-at: 1.7.0
+updated: 2026-08-24
+verified-at: 1.7.1
 links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
@@ -23,7 +23,7 @@ This separation is the **agent routing contract**
 | `TRIP-auto` | No | Chains all three phases with exactly one human checkpoint (plan approval) |
 | `TRIP-hotfix` | No | Emergency path; exempt from worker-dispatch, never exempt from the PR gate |
 | `TRIP-research`, `TRIP-review`, `TRIP-test` | No | Standalone: spike investigation, manual review audit, deep test authoring |
-| `TRIP-upgrade` | No | One-time migration off legacy in-project skill copies onto the plugin model |
+| `TRIP-upgrade` | No | Migration onto the plugin model, plus standalone backfills an already-migrated project still needs |
 | `TRIP-compact` | No | Legacy, superseded by `wiki-migrate` — kept as a stopgap only |
 
 `TRIP-1/2/3` and `TRIP-auto` are model-invokable so the agent can chain phases within a session
@@ -103,6 +103,15 @@ considerations, guidance sections — lives in the **consuming project's** `docs
 once by `TRIP-init` and never touched by a plugin update. Earlier versions of `trip` baked
 project specifics into the `SKILL.md` files themselves, which meant every plugin update was a
 three-way reconciliation; `TRIP-upgrade` exists to migrate projects off that model.
+
+`TRIP-upgrade` is not only a one-time migration. Its Phase 0 makes **two independent decisions**:
+one *structural path* (legacy skills present, profile missing `## Agent routing`, neither, or
+nothing structural left to do) and a set of *standalone migrations* that each run whenever their
+own condition holds — on the legacy, routing and "no structural work" paths alike. That second
+axis is what lets a project already on the plugin model receive later profile and settings
+backfills (currently the worktree-bootstrap subsection and the `git worktree` permission
+allowlist). Before 1.7.1 there was only the structural axis, so an already-routed project hit an
+"already current" exit and could never reach those backfills.
 
 ## Release lands through a PR, not a fast-forward merge
 
