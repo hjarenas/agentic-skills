@@ -92,6 +92,19 @@ def body_of(text: str) -> str:
     return text[m.end():] if m else text
 
 
+# SCHEMA.md may set its own size limit: "A page over 250 lines must be split."
+# The number is often emphasised — `**350 lines**`, `**350** lines`, `_350_` —
+# so tolerate up to two `*`/`_` on either side of it; without that the default
+# silently applies and the schema's limit is never enforced.
+SIZE_LIMIT = re.compile(r"page\s+over\s+[*_]{0,2}(\d+)[*_]{0,2}\s+lines", re.I)
+
+
+def schema_size_limit(schema_text: str, default: int) -> int:
+    """Return the size limit SCHEMA.md declares, or `default` if it declares none."""
+    m = SIZE_LIMIT.search(schema_text)
+    return int(m.group(1)) if m else default
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--root", type=Path, default=Path("docs/archi"))
@@ -107,13 +120,10 @@ def main() -> int:
         print(f"no wiki at {root} (expected {pages_dir})", file=sys.stderr)
         return 2
 
-    # SCHEMA.md may set its own size limit: "A page over 250 lines must be split."
     size_limit = args.size_limit
     schema = root / "SCHEMA.md"
     if schema.is_file():
-        m = re.search(r"page\s+over\s+(\d+)\s+lines", schema.read_text(encoding="utf-8"), re.I)
-        if m:
-            size_limit = int(m.group(1))
+        size_limit = schema_size_limit(schema.read_text(encoding="utf-8"), size_limit)
 
     pages = {p.stem: p for p in sorted(pages_dir.glob("*.md"))}
     findings: list[dict] = []
@@ -132,7 +142,7 @@ def main() -> int:
         text = path.read_text(encoding="utf-8")
         fm = parse_frontmatter(text)
         body = body_of(text)
-        lines = text.count("\n") + 1
+        lines = len(text.splitlines())  # matches `wc -l` for newline-terminated files
 
         if not fm:
             add("no-frontmatter", slug, "page has no frontmatter block")
