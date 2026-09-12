@@ -142,7 +142,7 @@ def main() -> int:
         text = path.read_text(encoding="utf-8")
         fm = parse_frontmatter(text)
         body = body_of(text)
-        lines = text.count("\n") + 1
+        lines = len(text.splitlines())  # matches `wc -l` for newline-terminated files
 
         if not fm:
             add("no-frontmatter", slug, "page has no frontmatter block")
