@@ -45,7 +45,7 @@ git checkout -b hotfix/[short-description]
 
 ## Step 3: Minimal Investigation
 
-First, read `docs/archi/index.md` and open the wiki pages covering the failing area (un-migrated projects: read `docs/ARCHI.md` in full). Then use the code-review-graph MCP tools to find the relevant code fast — `semantic_search_nodes` for the symptom/component, `query_graph` (`callers_of`/`imports_of`) to trace it, `get_impact_radius` to see what else touches it — instead of manually grepping; fall back to Grep/Read only for what the graph doesn't cover.
+First, read `docs/archi/index.md` and open the wiki pages covering the failing area (un-migrated projects: read `docs/ARCHI.md` in full). Then use the code-review-graph MCP tools to find the relevant code fast — `semantic_search_nodes_tool` for the symptom/component, `query_graph_tool` (`callers_of`/`imports_of`) to trace it, `get_impact_radius_tool` to see what else touches it — instead of manually grepping; fall back to Grep/Read only for what the graph doesn't cover.
 
 Quickly identify:
 

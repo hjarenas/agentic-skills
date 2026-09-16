@@ -14,7 +14,7 @@ Before implementing:
 
 0. `docs/TRIP.md` must already exist — read it first. It is this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, stop immediately and tell the user to run `/TRIP-init` first (or `/TRIP-upgrade` for a project set up before TRIP became a plugin). Do not improvise a profile inline — see `TRIP-1-plan`'s Prerequisites for why.
 1. Read `docs/archi/index.md` in full, then open the wiki pages covering the area the plan touches and follow their `[[links]]` one hop — documented architecture, rationale, and conventions. (Un-migrated projects: read `docs/ARCHI.md` in full instead.)
-2. Query the code-review-graph MCP tools for the plan's target area: `get_minimal_context(task="<feature summary>")`, then `semantic_search_nodes`/`query_graph` (`callers_of`/`imports_of`) on the files the plan will touch, so you know the real current callers/dependents before changing them. Use `detail_level="minimal"`.
+2. Query the code-review-graph MCP tools for the plan's target area: `get_minimal_context_tool(task="<feature summary>")`, then `semantic_search_nodes_tool`/`query_graph_tool` (`callers_of`/`imports_of`) on the files the plan will touch, so you know the real current callers/dependents before changing them. Use `detail_level="minimal"`.
 
 ## Your Task
 

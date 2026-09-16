@@ -177,7 +177,7 @@ wiki-ingest <x.y.z>
 ```
 
 See that skill for what it does with the changelog and diff. Before invoking it, cross-check with
-the code-review-graph MCP tools — `get_architecture_overview` and `list_communities` — so the
+the code-review-graph MCP tools — `get_architecture_overview_tool` and `list_communities_tool` — so the
 ingest knows about any module the diff alone would not reveal.
 
 Invoke the `wiki-lint` skill with `--fix` and fix anything cheap. Call it by name, not by

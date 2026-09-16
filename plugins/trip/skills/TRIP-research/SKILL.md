@@ -30,7 +30,7 @@ Read `docs/archi/index.md`, then the pages bearing on the question. For a questi
 already answer, invoke `wiki-query` first — the synthesis may already exist, and re-deriving it
 is the waste this wiki was built to stop. (Un-migrated projects: read `docs/ARCHI.md` in full.)
 
-For codebase-related questions, also ground the investigation in the current structure via the code-review-graph MCP tools: `get_architecture_overview` and `list_communities` for the map, `semantic_search_nodes`/`query_graph` for anything specific to the question.
+For codebase-related questions, also ground the investigation in the current structure via the code-review-graph MCP tools: `get_architecture_overview_tool` and `list_communities_tool` for the map, `semantic_search_nodes_tool`/`query_graph_tool` for anything specific to the question.
 
 ## Step 1: Define Scope
 
@@ -130,7 +130,7 @@ Conduct the research:
 
 ### For Architecture Exploration
 
-- Use `get_architecture_overview`, `list_communities`, `get_community` (code-review-graph) for the current module structure
+- Use `get_architecture_overview_tool`, `list_communities_tool`, `get_community_tool` (code-review-graph) for the current module structure
 - Use `get_hub_nodes_tool`/`get_bridge_nodes_tool` to find central or coupling-heavy code
 - Cross-check findings against the wiki's documented intent — flag any drift, and note pages that `/wiki-ingest` should correct
 
@@ -150,7 +150,7 @@ Conduct the research:
 
 ### For Bug Investigation
 
-- Use `query_graph` (`callers_of`/`callees_of`, code-review-graph) to trace the failure path before diving into files
+- Use `query_graph_tool` (`callers_of`/`callees_of`, code-review-graph) to trace the failure path before diving into files
 - Reproduce the issue
 - Trace the root cause
 - Identify contributing factors

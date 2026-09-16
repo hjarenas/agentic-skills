@@ -27,7 +27,7 @@ would strand its content.
 Work out what the project is before writing conventions for it. Prefer the code-review-graph
 MCP tools if they are available and the graph is populated:
 
-- `get_architecture_overview` / `list_communities` — major modules and their groupings
+- `get_architecture_overview_tool` / `list_communities_tool` — major modules and their groupings
 - `get_hub_nodes_tool` / `get_bridge_nodes_tool` — the components everything depends on
 
 Fall back to reading build files (`package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`,
