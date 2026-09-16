@@ -30,8 +30,8 @@ Before dispatching planning workers:
 
    1. Read docs/archi/index.md in full, then the wiki pages covering the affected area,
       following [[links]] one hop. (Un-migrated projects: read docs/ARCHI.md in full instead.)
-   2. Query code-review-graph: get_minimal_context(task="<feature summary>"), then
-      semantic_search_nodes / query_graph (callers_of/imports_of) on the files this will
+   2. Query code-review-graph: get_minimal_context_tool(task="<feature summary>"), then
+      semantic_search_nodes_tool / query_graph_tool (callers_of/imports_of) on the files this will
       likely touch.
    3. If the code-review-graph MCP tools are unavailable, say so explicitly in the report —
       do not silently fall back to file reads only; a missing tool is a coverage gap the

@@ -69,7 +69,7 @@ in Phase 3 by `/wiki-init`.
 A thorough exploration — everything later phases decide depends on it. Prefer the
 code-review-graph MCP tools where they cover the ground:
 
-- `list_graph_stats` / `get_architecture_overview` / `list_communities` — structure and major modules
+- `list_graph_stats_tool` / `get_architecture_overview_tool` / `list_communities_tool` — structure and major modules
 - `get_hub_nodes_tool` / `get_bridge_nodes_tool` — central components
 
 Fall back to manual exploration when the graph is empty (new or unindexed project).

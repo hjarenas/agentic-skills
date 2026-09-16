@@ -15,7 +15,7 @@ Only accept a dispatch that gives you a concrete assignment (a feature summary o
 not a vague "look around"). Typical assignment shape: read `docs/archi/index.md` (or
 `docs/ARCHI.md` on an un-migrated project) in full, then the wiki pages covering the affected area,
 following `[[links]]` one hop; query the `code-review-graph` MCP tools
-(`get_minimal_context`, `semantic_search_nodes`, `query_graph` for `callers_of`/`imports_of`) on
+(`get_minimal_context_tool`, `semantic_search_nodes_tool`, `query_graph_tool` for `callers_of`/`imports_of`) on
 the files the work will likely touch.
 
 If a requested MCP tool is unavailable, say so explicitly in your report — never silently fall
