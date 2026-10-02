@@ -42,7 +42,15 @@ current state and recovery options:
 2. **The pull request** — review and merge it on GitHub at the end.
 
 Everything else runs autonomously. Do not ask confirmation questions between phases or before
-configured reviews, implementation batches, testing gates, or release-doc steps.
+configured reviews, implementation batches, testing gates, or release-doc steps. Do not set
+checkpoints of your own ("I'll stop here for your decision"): a self-set stop has left a run idle
+overnight. Write every question and status update as `agent-routing.md` §Talking to the user
+describes. A user who asks "how is it going?" gets status, not a "keep going or pause?" question.
+
+An autonomous run has nobody watching it, so follow the waiting rules in `agent-routing.md`
+§Waiting for a worker to the letter. In particular, never end a turn with work remaining and
+nothing in flight. Never pass time with no-op tool calls. Treat a worker that has gone quiet as
+stalled, which usually means a permission prompt the user cannot see, not as slow.
 
 ---
 
@@ -70,7 +78,7 @@ configured reviews, implementation batches, testing gates, or release-doc steps.
 Under `TRIP-auto`, invoke `TRIP-3-release` as a nested release orchestrator. On the feature branch (never on main), its
 `release-worker` performs these tasks and its independent `release-verifier` checks them:
 
-1. Date/week, SemVer bump in all version files (+ lockfiles), promote the Codex CR to `docs/3-code-review/CR_wa_vx.y.z.md`, changelog file + table, `/wiki-ingest` to fold the change into `docs/archi/`, README version.
+1. Date/week, SemVer bump in all version files (+ lockfiles), promote the Codex CR to `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md`, changelog file + table, `/wiki-ingest` to fold the change into `docs/archi/`, README version.
 2. Invoke `/wiki-lint --fix` and address the mechanical findings (broken links, index gaps, `links:` drift). Leave judgement calls — contradictions, stale claims, pages wanting a split — for the PR description's Decisions section rather than resolving them unattended.
    Un-migrated projects instead update `docs/ARCHI.md` per `docs/ARCHI-rules.md`.
 3. Commit everything on the feature branch with the one-line release message. **Do not tag, do not merge, do not touch the main branch.**
@@ -87,15 +95,20 @@ Under `TRIP-auto`, invoke `TRIP-3-release` as a nested release orchestrator. On 
 ```markdown
 ## Summary
 
-[2-4 sentences: what this delivers and why, in product terms.]
+[2-4 sentences: what this delivers and why, in product terms. Write for a reader who has not seen the spec: describe behaviour, and put requirement IDs in trailing parentheses at most.]
 
-**Plan**: `docs/1-plans/F_x.y.z_<feature>.plan.md` · **Version**: x.y.z · **Changelog**: `docs/2-changelog/wa_vx.y.z.md`
+**Plan**: `docs/1-plans/F_x.y.z_<feature>.plan.md` · **Version**: x.y.z · **Changelog**: `docs/2-changelog/w<WEEK>_v<X.Y.Z>.md`
 
 ## What changed, by area
 
 - **[Area 1 — e.g. backend]**: [1-2 sentences per area; name the modules, not every file]
 - **[Area 2 — e.g. infra]**: ...
 - **[Area 3 — e.g. frontend/CI/docs]**: ...
+
+## Scope
+
+- **Built**: [the requested capabilities this PR delivers]
+- **Not built**: [each requested item left out, why, and its follow-up issue number — or "nothing"]
 
 ## Decisions made along the way
 
@@ -104,13 +117,13 @@ Under `TRIP-auto`, invoke `TRIP-3-release` as a nested release orchestrator. On 
 ## Verification
 
 - Testing gate: [lint | typecheck | tests summary, per package]
-- Codex plan review: [N rounds -> verdict] · Codex code review: [N rounds -> verdict], CR at `docs/3-code-review/CR_wa_vx.y.z.md`
+- Plan review: [harness/model, N rounds -> verdict] · Code review: [harness/model, N rounds -> verdict], CR at `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md`
 - [Any manual/integration verification performed or explicitly deferred]
 
 ## After merging
 
 - [ ] Tag `vx.y.z` on the merge commit and push the tag
-- [ ] [Deployment/ops follow-ups, e.g. "deploy-dev.yml runs on merge; verify the smoke test", operator prerequisites]
+- [ ] [Deployment/ops follow-ups that exist in this repository — name the real workflow file or command; never a generic step such as "verify the smoke test" unless that smoke test exists]
 ```
 
 ### Merge guidance (for the user, include as a PR comment only if asked)

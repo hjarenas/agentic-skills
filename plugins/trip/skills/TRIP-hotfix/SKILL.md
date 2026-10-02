@@ -21,16 +21,16 @@ Hotfix: $ARGUMENTS
 
 ## Step 1: Assess Urgency
 
-Before proceeding, confirm this is a genuine hotfix:
+This skill only runs when the user invokes it, and that choice is the urgency call: do not ask
+again. A confirmation here once left a fix idle for over two hours.
 
-**Use the `AskUserQuestion` tool** to confirm urgency:
+If the description plainly is not urgent (cosmetic, a feature request), say so in one line, name
+`/TRIP-auto` as the usual route, and proceed with the hotfix unless the user redirects.
 
-- **Question**: "Is this a production-critical issue that cannot wait for the normal TRIP workflow?"
-- **Options**: "Yes — critical issue" (security vulnerability, data corruption, service outage, or critical user-facing bug), "No — regular bug" (redirect to `TRIP-1-plan` for proper workflow)
-
-**If "No"**: Redirect to `TRIP-1-plan` for proper workflow.
-
-**If "Yes"**: Proceed with hotfix.
+If the report sounds like an outage ("can't log in", "prod is down"), first confirm the defect is
+real and current. Give the user copy-pasteable triage commands built from the profile's deployment
+details (`docs/TRIP.md`), with `2>&1` on anything whose errors go to stderr. A transient failure
+needs no fix.
 
 ---
 

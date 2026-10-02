@@ -89,13 +89,13 @@ Uncovered risky paths: one line each in `docs/4-unit-tests/COVERAGE-DEBT.md` (`p
 
 After completing tests, create a summary file:
 
-**File**: `docs/4-unit-tests/wa_vx.y.z_test.md`
-(a = project week, x.y.z = version)
+**File**: `docs/4-unit-tests/w<WEEK>_v<X.Y.Z>_test.md`
+(`<WEEK>` = project week number, `<X.Y.Z>` = version — e.g. `w9_v0.35.0`; never leave the placeholder literal)
 
 **Content**:
 
 ```markdown
-# Test Summary - Week a, V. x.y.z
+# Test Summary - Week <WEEK>, V. x.y.z
 
 ## What Was Tested
 

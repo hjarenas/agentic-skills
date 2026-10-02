@@ -25,7 +25,7 @@ design rather than the implementation, which neither this skill nor `/codex:revi
 
 Each turn is a **fresh Codex run**; the previous review is stored under `.codex-bridge/`
 (gitignored) and spliced back into the prompt. Review output stays there — promotion to
-`docs/3-code-review/CR_wa_vx.y.z.md` happens after convergence, not per turn.
+`docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md` happens after convergence, not per turn.
 
 ## Arguments
 
@@ -67,7 +67,7 @@ branch>` from `docs/TRIP.md` § Project and pass the full feature diff inline as
 ## After Convergence
 
 1. Produce the consolidated review: `$RUN <target> --prompt-file $P/synthesize.tpl --extra "<round-by-round summary>"`
-2. Write it to `docs/3-code-review/CR_wa_vx.y.z.md`.
+2. Write it to `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md`.
 3. Continue with `TRIP-3-release`.
 
 ## Notes

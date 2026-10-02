@@ -13,8 +13,14 @@ You are now in **implementation mode** for **this project**.
 Before implementing:
 
 0. `docs/TRIP.md` must already exist — read it first. It is this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, stop immediately and tell the user to run `/TRIP-init` first (or `/TRIP-upgrade` for a project set up before TRIP became a plugin). Do not improvise a profile inline — see `TRIP-1-plan`'s Prerequisites for why.
-1. Read `docs/archi/index.md` in full, then open the wiki pages covering the area the plan touches and follow their `[[links]]` one hop — documented architecture, rationale, and conventions. (Un-migrated projects: read `docs/ARCHI.md` in full instead.)
-2. Query the code-review-graph MCP tools for the plan's target area: `get_minimal_context_tool(task="<feature summary>")`, then `semantic_search_nodes_tool`/`query_graph_tool` (`callers_of`/`imports_of`) on the files the plan will touch, so you know the real current callers/dependents before changing them. Use `detail_level="minimal"`.
+1. Do **not** read the architecture wiki or query the code graph yourself — that is codebase
+   exploration, which the orchestrator boundary reserves for workers. Instead, put it in the
+   first implementer's and batch reviewer's assignments: read `docs/archi/index.md` and the wiki
+   pages covering the plan's area, following `[[links]]` one hop (un-migrated projects:
+   `docs/ARCHI.md`), and query the code-review-graph MCP tools (`get_minimal_context_tool`, then
+   `semantic_search_nodes_tool`/`query_graph_tool` for `callers_of`/`imports_of`, with
+   `detail_level="minimal"`) on the files the plan will touch. When a graph tool is unavailable,
+   the worker says so once and continues with grep-grade evidence.
 
 ## Your Task
 
@@ -94,9 +100,10 @@ below at Per-Phase Implementation.
 
 ## Per-Phase Implementation — Delegate to the configured workers
 
-Dispatch all implementation to the configured `implementer`. For `codex-bridge`, use the
-`codex-implement` skill with explicit model/effort overrides. Other harnesses receive the same
-batch scope and completion contract.
+Dispatch all implementation to the configured `implementer`: `trip:implementer` on the `subagent`
+harness, the `codex-implement` skill with explicit model/effort overrides on `codex-bridge`. Other
+harnesses receive the same batch scope and completion contract. The steps below name the role;
+`codex-bridge` invocation forms are given alongside where they differ.
 
 Delegation is **batched within each scheduled phase**: the implementer handles a few checkboxes
 per turn, an independent batch reviewer checks them, and a fixer handles corrections. Carry
@@ -116,19 +123,19 @@ Read the plan fully and split its to-dos into batches. You are the judge of batc
 
 ### 2. Delegate batch by batch
 
-**Start** the session with the first batch by invoking the `codex-implement` skill:
+**Start** with the first batch: dispatch the implementer with the plan path, the batch's
+checkboxes ("implement only: …"), and its lane. (Omit the batch restriction to one-shot a small
+plan.)
+
+**Each next batch carries your review corrections as notes**: what was fixed after the last batch
+and why, and conventions to apply from now on. Workers are stateless between dispatches — a
+native subagent starts fresh every time — so the notes are the only continuity.
+
+On `codex-bridge`, the same two shapes are:
 
 ```
 codex-implement <plan-path> Implement only: <batch-1 checkboxes>
-```
-
-(Omit the instructions to one-shot a small plan.)
-
-**Each next batch continues the same session**, carrying your review corrections as notes:
-
-```
-codex-implement <plan-path> Notes: <what you fixed after the last batch and why; conventions to
-apply from now on>. Now implement: <next batch checkboxes>
+codex-implement <plan-path> Notes: <notes>. Now implement: <next batch checkboxes>
 ```
 
 The skill resumes the workspace's last Codex thread for the next batch. That is only correct if
@@ -138,7 +145,11 @@ the notes instead.
 
 **Parse the trailing tag** of each report:
 - `IMPLEMENTATION_COMPLETE` → review the batch (below).
-- `IMPLEMENTATION_PARTIAL` → read the report; resume with instructions for the remainder, or finish small leftovers yourself during the batch review.
+- `IMPLEMENTATION_PARTIAL` → read the report and dispatch the implementer again with instructions
+  for the remainder. Never finish leftovers yourself, however small; the orchestrator boundary has
+  no small-change exception.
+- A report beginning `BLOCKED:` → a tool or command was denied. Surface it to the user with the
+  command named; do not re-dispatch into the same denial.
 
 ### 3. Review each batch (delta review)
 
@@ -156,12 +167,18 @@ After each implementer report, before requesting the next batch:
    `agent-routing.md`'s Dispatch contract for why: the Bash-tool backgrounding trap and the
    zero-selected-count check apply to every worker dispatch, not just this one). Route `TESTS_RED`
    to the fixer, then rerun.
-5. Dispatch `workspace-worker` (`codex-workspace`) to stage the reviewed batch with `git add -A`.
-   Require `WORKSPACE_COMPLETE`. Staging is batch-local; committing happens only at the phase gate.
+5. Dispatch `workspace-worker` (`codex-workspace`) to stage the reviewed batch **by explicit
+   path**: `git -C <worktree> add -- <paths>`, where the paths are the union of files the
+   implementer's and fixer's reports list for this batch. Never `git add -A` — it sweeps a
+   sibling's half-finished files, or a run that rewrote committed fixtures, into the batch. Require
+   `WORKSPACE_COMPLETE` with `git diff --cached --name-only` in the report, and compare that list
+   with the paths you sent; any difference blocks the next batch. Staging is batch-local;
+   committing happens only at the phase gate.
 6. Have `batch-reviewer` verify completed plan checkboxes against the diff and report exactly
-   which checkboxes are done vs. still open; have `planner` tick the confirmed ones and report the
-   updated list. Do not start the next batch until that report names every checkbox this batch
-   touched.
+   which checkboxes are done vs. still open. Record the confirmed ones in your notes. Do not start
+   the next batch until that report names every checkbox this batch touched. The plan file is
+   ticked once per phase, at the phase gate (`phase-scheduling.md`), not once per batch: a planner
+   dispatch only to tick boxes was a third of all planner dispatches in observed runs.
 
 **Plan-amendment hygiene**: if a decision made mid-batch changes what an earlier checklist bullet
 says (not just adds new scope), have `planner` edit that bullet in place and mark it superseded —
@@ -268,7 +285,7 @@ independent from the implementer, batch reviewer, fixer, and test worker.
 4. **Build worker notes** from the fixer and reviewer reports: fixes made, disputed findings and
    why, plus user decisions or environment limitations the reviewer should not re-flag.
 
-5. **Resume** (re-run the testing gate first — lint, typecheck, affected tests — and build a fresh summary): invoke `codex-code-review` again with the same target, passing the notes and the fresh gate summary. The skill detects the stored review and switches to its resume prompt.
+5. **Resume** (re-run the testing gate first — lint, typecheck, affected tests — and build a fresh summary): dispatch `code-reviewer` again with the same target, the notes and the fresh gate summary. On `codex-bridge`, invoke `codex-code-review` with those; the skill detects the stored review and switches to its resume prompt.
    Loop to step 2.
 
 6. **Cap at 5 rounds** (or user-specified). Surface remaining findings.
@@ -295,7 +312,7 @@ Surface reviews verbatim. Keep fixer edits scoped. If a reviewer repeats a findi
 fresh `batch-reviewer` to determine whether the fix addressed an adjacent concern or the notes
 were incomplete. The testing gate must pass before APPROVED.
 
-Codex is stateless, so the implementer notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
+Every worker is stateless between dispatches — native subagents start fresh, and `codex-bridge` is stateless by design — so the notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
 
 ---
 

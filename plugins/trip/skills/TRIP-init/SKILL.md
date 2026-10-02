@@ -221,6 +221,12 @@ harness default.
 | release-worker | subagent |  |  |
 | release-verifier | subagent |  |  |
 
+<Model guidance for the table: do not route `workspace-worker`, `release-worker` or
+`release-verifier` to the smallest model tier. Those roles handle long worktree paths and write
+durable artifacts. On the smallest tier they misspelled paths, ran git in the primary checkout,
+and invented figures in release documents. A mid-tier model is the floor there. Delete this note
+once read.>
+
 ## Integration checks
 
 <When does a change need integration/E2E verification, and with what? e.g. "selectors
