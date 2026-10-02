@@ -233,7 +233,7 @@ contains only intended release work and remains on the feature branch.
 git -C <worktree> add -- <paths reported by the Steps 2-8 release workers>
 git -C <worktree> diff --cached --name-only    # must equal that path list
 git -C <worktree> commit -m "<commit message from Step 4>"
-git -C <worktree> status --porcelain             # must be empty
+git -C <worktree> status --porcelain -- . ':!.codex-bridge'   # must print nothing
 ```
 
 Any entry left after the commit blocks the push. It is either feature work that

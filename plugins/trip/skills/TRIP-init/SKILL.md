@@ -395,6 +395,13 @@ First entry is the current version with the patch bumped (`1.2.3` → `1.2.4`; n
 
 New entries go at the **top** of each section.
 
+### `.gitignore`
+
+If any role in the routing table uses the `codex-bridge` harness, add `.codex-bridge/` to
+`.gitignore`. Those workers keep their state in the worktree they run in, and an untracked
+`.codex-bridge/` would otherwise show up in `git status` and risk being committed. The clean-tree
+check already excludes it, so an older project without this line is not blocked.
+
 ### `docs/4-unit-tests/TESTING.md`
 
 Framework, the real commands, test organisation, the conventions actually observed in the
@@ -414,6 +421,7 @@ codebase, and coverage requirements — or "Not defined". Do not invent a thresh
 - [ ] `docs/3-code-review/cr-template.md` installed, section names matching the checklist
 - [ ] `docs/TRIP.md` § Commands has a "Bootstrapping a fresh worktree" subsection (or its absence is deliberate)
 - [ ] `.claude/settings.json` git allowlist merged in, destructive commands left un-allowlisted
+- [ ] `.codex-bridge/` in `.gitignore` when any role routes to `codex-bridge`
 - [ ] `docs/2-changelog/changelog_table.md` initialized
 - [ ] `docs/4-unit-tests/TESTING.md` written against the actual test setup
 - [ ] No TRIP skill file was edited — they are read-only, and the profile replaced the need

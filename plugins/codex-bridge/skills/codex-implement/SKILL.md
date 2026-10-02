@@ -46,8 +46,9 @@ Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
    - `IMPLEMENTATION_COMPLETE` — hand control back to the requester's batch review (TRIP-2).
    - `IMPLEMENTATION_PARTIAL` — read the report; the requester re-dispatches with instructions for the remainder; it never finishes leftovers itself.
 
-For a long batch, add `--background` and poll with `/codex:status`, collecting the result with
-`/codex:result`.
+For a long batch, add `--background`, then end the turn: the orchestrator's watchdog checks
+`/codex:status` (see `agent-routing.md` §Waiting for a worker) rather than a polling loop, and
+`/codex:result` collects the report.
 
 ## Notes
 

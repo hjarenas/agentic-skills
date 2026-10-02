@@ -319,11 +319,12 @@ Treat every worker as stateless between dispatches — native subagents start fr
 ### Commit the integration fixes
 
 Everything that lands after the last phase merge is still uncommitted when the loop converges:
-tests written by the testing gate, fixes from the gate, fixes from the code review, and the
-planner's final checkbox ticks. Dispatch `workspace-worker` to stage those by explicit path — the
-union of the paths those reports list — and commit them on the feature branch. Then require
-`git status --porcelain` to come back empty. Any remaining entry is either work nobody reported
-or a file a run rewrote: surface it rather than proceeding. `TRIP-3-release` commits only its own
+tests written by the testing gate, fixes from the gate, and fixes from the code review. Dispatch
+`workspace-worker` to stage those by explicit path — the union of the paths those reports list —
+and commit them on the feature branch. Then require the post-commit **clean-tree check**
+(`agent-routing.md`). Any remaining entry is either work nobody reported or a file a run
+rewrote: surface it rather than proceeding. Repeat this step whenever later work lands in the
+feature worktree, including the "No, there are remaining items" path below. `TRIP-3-release` commits only its own
 release artifacts, so anything not committed here would ship without the fixes the review
 approved.
 

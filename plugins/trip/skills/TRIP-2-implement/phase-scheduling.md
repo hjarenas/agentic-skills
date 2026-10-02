@@ -46,10 +46,10 @@ After all batches for a phase are staged, run its gate before merging:
 3. Dispatch `planner` once, its lane the plan file alone, to tick every checkbox the batch
    reviews confirmed for this phase. That way the ticks land in the phase's own commit.
 4. On pass, the phase is **merge-ready**. Dispatch `workspace-worker` to stage by path the plan file
-   (it holds step 3's ticks) and every path the phase-gate fixer reports from steps 1-2 list,
-   none of which batch staging covered. Require `git status --porcelain` to be empty in the phase
-   worktree after staging; any remaining entry is unreported work, so surface it. Then commit on
-   the phase
+   (it holds step 3's ticks) and every path listed in the fixer reports from steps 1-2; batch
+   staging covered neither. Before committing, the phase worktree must pass the pre-commit
+   **clean-tree check** (`agent-routing.md`), and any remaining entry is unreported work to
+   surface. Then commit on the phase
    branch; record that phase branch's expected tip before dispatch. Merge it into the feature
    branch with `git merge --no-ff`, push the feature branch, remove the phase worktree, and delete
    the phase branch. Before deleting, require `git merge-base --is-ancestor <phase-tip>

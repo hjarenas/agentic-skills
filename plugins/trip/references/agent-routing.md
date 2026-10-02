@@ -104,8 +104,9 @@ When a role's row names a model, pass it as `model` on every dispatch, and re-re
 any compaction rather than recalling it. When the row is blank, the agent file decides: its
 `model:` frontmatter, or — when that is absent too — the orchestrator's own model. That last
 fallback is silent and expensive: one observed run lost its routing line to a compaction and sent
-36 worker dispatches in a row to the orchestrator's top-tier model. So leave a row blank only when
-running that role on the orchestrator's model is acceptable.
+36 worker dispatches in a row to the orchestrator's top-tier model. So leave a row blank only when the
+role's agent file sets a `model:` you accept, or running that role on the orchestrator's model is
+acceptable.
 
 The Effort column has no effect on a plain `subagent` dispatch, because the Agent tool takes no
 effort field. To pin a role's effort, keep a copy of the role's agent with `model:` and `effort:`
@@ -235,6 +236,19 @@ and is what the report can then describe. Where a worker judges that the tree it
 reset, it reports that with its blocked tag and stops, leaving the decision to the user — a
 worker's judgment that the work at risk is worthless has been wrong before, and the loss is
 silent.
+
+### Clean-tree check
+
+Several steps require a worktree to hold no unreported work. The **clean-tree check** is:
+
+- **after a commit**: `git -C <wt> status --porcelain -- . ':!.codex-bridge'` prints nothing;
+- **before a commit**, when staged entries are expected: `git -C <wt> diff --name-only -- .
+  ':!.codex-bridge'` and `git -C <wt> ls-files -o --exclude-standard -- . ':!.codex-bridge'` both
+  print nothing.
+
+`.codex-bridge/` is excluded because `codex-bridge` keeps its state in the worktree it runs in;
+projects should also gitignore it (`TRIP-init` Phase 6). Any other entry is either work nobody
+reported or a file some run rewrote. Surface it rather than sweeping it in with `git add -A`.
 
 **Scope every worker-run test command explicitly** — never leave a `test-worker` (or an
 `implementer`/`fixer` running its own verification) to decide how much of the suite to run. A
