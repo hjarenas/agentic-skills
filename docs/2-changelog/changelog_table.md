@@ -20,8 +20,8 @@
   - **Fewer stalling questions**: TRIP-1 runs plan review without asking, TRIP-hotfix stops re-confirming urgency and redirects feature requests, and TRIP-auto forbids self-set checkpoints. The PR template gains a Scope section
   - **Model routing**: a blank row falls back to the agent file, then the orchestrator model (36 dispatches once went silently to the top tier). A `subagent:<agent-name>` harness value covers pinned agents carrying `effort:`
   - **`codex-bridge` (1.2.2 → 1.2.3)**: placeholder rename; leftovers are re-dispatched; long batches end the turn; the release commit is no longer owned by `codex-release`
-  - **Agent definitions**: shipped as a reviewed patch (`disallowedTools` additions, `model:` defaults, "Worker basics", ownership fixes), because the release session was blocked from editing agent files
-  - **Code review**: independent `code-reviewer`, 3 rounds -> APPROVED, conditional on the agent patch; 1 Critical, 10 Major, 18 Minor and 3 Suggestions, all addressed (`docs/3-code-review/CR_w8_v1.8.0.md`)
+  - **Agent definitions**: `disallowedTools` additions, `model:` defaults, "Worker basics", and ownership fixes, reviewed as a patch and applied unchanged in their own commit, because the release session's permission check blocked direct edits to agent files
+  - **Code review**: independent `code-reviewer`, 3 rounds -> APPROVED (its condition, the agent patch, met); 1 Critical, 10 Major, 18 Minor and 3 Suggestions, all addressed (`docs/3-code-review/CR_w8_v1.8.0.md`)
 
 - **v1.7.1 (Reachable TRIP-upgrade Standalone Migrations — Week 3, 24-08-2026)**:
   - **`trip` (1.7.0 → 1.7.1)**: patch fixing a defect in 1.7.0 — the two standalone `TRIP-upgrade` migrations it added (worktree-bootstrap subsection, `git worktree` permission allowlist) claimed to run "on every upgrade path", but nothing implemented that and they were unreachable for exactly the projects needing them

@@ -8,8 +8,8 @@ origin/main...HEAD` plus `git status --short`. The independent `code-reviewer` e
 - the 3 wiki paths, marked †, in round 3.
 
 The remaining 4 release artifacts are covered by `release-verifier`. The 11 agent definitions under
-`plugins/trip/agents/` were reviewed in rounds 2 and 3 as a patch, listed at the end. They land in
-this release only if that patch is applied (see Verdict).
+`plugins/trip/agents/` were reviewed in rounds 2 and 3 as a patch, listed at the end. The patch was
+applied unchanged as its own commit in this release (see Verdict).
 
 - `README.md` *
 - `plugins/codex-bridge/.claude-plugin/plugin.json` *
@@ -62,7 +62,8 @@ This release moves those lessons into the routing contract and the phase skills.
 by an independent `code-reviewer` over three rounds: 1 Critical, 10 Major (counting the round-1
 agent-file findings that the patch fixes), 18 Minor and 3 Suggestions, all addressed. The review's
 most valuable catch was a regression the change itself introduced (see Findings). **APPROVED**,
-conditional on the agent patch shipping in the same PR.
+conditional on the agent patch shipping in the same PR. That condition is met: the patch landed
+unchanged.
 
 ---
 
@@ -198,18 +199,19 @@ tool names in a subagent. Listing them in `disallowedTools` is harmless if they 
 
 ## Verdict
 
-**APPROVED**, conditional on the agent patch.
+**APPROVED** (the condition on the agent patch is met; the patch landed unchanged in this release).
 
 Independent `code-reviewer`, three rounds:
 - round 1: REQUEST_CHANGES (1 Critical, 7 Major, 8 Minor, 1 Suggestion);
 - round 2: REQUEST_CHANGES (3 Major, 7 Minor, 2 Suggestions);
 - round 3: APPROVED (3 Minor, since fixed).
 
-The approval is conditional. Round-1 findings on `implementer.md`, `release-worker.md` and
-`planner.md` are fixed only by the agent-definition patch, which this session could not apply
-(edits to agent definitions were blocked as self-modification). Without the patch those three
-remain Major: agents would contradict the skills on checkbox ownership, commit ownership, and
-loading `TRIP-*` skills.
+The approval was conditional. Round-1 findings on `implementer.md`, `release-worker.md` and
+`planner.md` are fixed only by the agent-definition patch. The release session's automated
+permission check blocked direct edits to agent definitions as self-modification, so the reviewed
+patch was applied unchanged at the user's explicit request, as a separate commit. Without it those
+three findings would have remained Major: the agents would have contradicted the skills on
+checkbox ownership, commit ownership, and loading `TRIP-*` skills.
 
 Two lessons stand out:
 - **The Critical was introduced by the fix, not present before.** Removing `git add -A`
