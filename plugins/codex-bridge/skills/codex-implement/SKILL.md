@@ -44,7 +44,7 @@ Let `RUN="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/codex-run.py"` and
 
 5. **Parse trailing tag** of the report:
    - `IMPLEMENTATION_COMPLETE` — hand control back to the requester's batch review (TRIP-2).
-   - `IMPLEMENTATION_PARTIAL` — read the report; resume with instructions for the remainder, or let the requester finish small leftovers directly.
+   - `IMPLEMENTATION_PARTIAL` — read the report; the requester re-dispatches with instructions for the remainder; it never finishes leftovers itself.
 
 For a long batch, add `--background` and poll with `/codex:status`, collecting the result with
 `/codex:result`.

@@ -37,7 +37,7 @@ fall back to doing the work in the orchestrator context.
 | `test-worker` | Test authoring and execution of the requested gate | Code-review verdict |
 | `code-reviewer` | Independent full-change review and verdict | Editing the change it reviews |
 | `workspace-worker` | Branch checkout/creation, worktree add/remove and `--no-ff` merges for the flow and phase lifecycle, staging, commits, pushes, and status reports | Product changes or approval verdicts |
-| `release-worker` | Version/docs/changelog/commit/PR preparation | Declaring an unverified implementation ready |
+| `release-worker` | Version/docs/changelog preparation, push, and PR creation (the release commit is `workspace-worker`'s) | Declaring an unverified implementation ready |
 | `release-verifier` | Verify release artifacts, branch safety, and PR readiness | Producing the release artifacts it verifies |
 
 Keep reviewer roles independent from the worker whose artifact they review. A worker may be
@@ -55,16 +55,6 @@ Read `docs/TRIP.md` section `Agent routing`. A new project receives this shape:
 
 Invocation arguments override this table for the current run. Blank model or effort means the
 harness default.
-
-On the `subagent` harness, a blank model falls back to the role's agent file: its `model:`
-frontmatter, or — when that is absent too — the orchestrator's own model. That last fallback is
-silent and expensive: one observed run lost its routing line to a compaction and sent 36 worker
-dispatches in a row to the orchestrator's top-tier model. Pass `model` on every dispatch, re-reading
-this table after any compaction rather than recalling it. The Effort column has no effect on a native
-subagent dispatch: the Agent tool takes no effort field. To pin a role's effort, give it a pinned
-agent file (a copy of the role's agent with `model:` and `effort:` in its frontmatter, under
-`.claude/agents/`), route the role to that agent, and run `/reload-plugins` (or restart) so the
-new agent type registers.
 
 | Role | Harness | Model | Effort |
 | :--- | :--- | :--- | :--- |
@@ -100,10 +90,27 @@ Supported harness values:
   An "Unknown agent" error for `trip:<role>` means a stale plugin install: retry that one
   dispatch with `general-purpose` and tell the user to run `/plugin marketplace update` and then
   `/reload-plugins`.
+- `subagent:<agent-name>`: launch the named native agent instead of `trip:<role>`. It is for a
+  project's pinned copy of a role's agent (see *Model and effort on the subagent harness* below);
+  the copy must keep the role's contract and completion tags.
 - `codex-bridge`: invoke the role mapping below. Pass model/effort as explicit per-run overrides;
   do not mutate `.codex/config.toml`.
 - `skill:<name>`: invoke the named installed worker skill, including the role, artifact, scope,
   completion contract, and requested model/effort in the assignment.
+
+### Model and effort on the subagent harness
+
+When a role's row names a model, pass it as `model` on every dispatch, and re-read this table after
+any compaction rather than recalling it. When the row is blank, the agent file decides: its
+`model:` frontmatter, or — when that is absent too — the orchestrator's own model. That last
+fallback is silent and expensive: one observed run lost its routing line to a compaction and sent
+36 worker dispatches in a row to the orchestrator's top-tier model. So leave a row blank only when
+running that role on the orchestrator's model is acceptable.
+
+The Effort column has no effect on a plain `subagent` dispatch, because the Agent tool takes no
+effort field. To pin a role's effort, keep a copy of the role's agent with `model:` and `effort:`
+in its frontmatter under the project's `.claude/agents/`, then route the role to it with
+`subagent:<agent-name>`. Run `/reload-plugins` (or restart) so the new agent type registers.
 
 An invocation may begin with routing overrides:
 
@@ -166,7 +173,9 @@ Every assignment must include:
    and
 6. for any worker that touches a worktree, its **location check**: the absolute path and the
    literal first command `cd <path> && pwd && git rev-parse --show-toplevel && git branch
-   --show-current`, with the expected output and "on any mismatch, stop and report". Workers
+   --show-current`, with the expected output and "on any mismatch, stop and report". A dispatch
+   that *creates* the worktree checks the primary checkout instead, then runs the check against
+   the new path once it exists. Workers
    prefix every later command with `cd <path> &&` or use `git -C <path>`; the shell's directory
    does not reliably persist between commands, and "work in the worktree" alone has repeatedly
    sent workers — weaker models especially — into the primary checkout or a misspelled sibling
@@ -277,8 +286,10 @@ for it. Waiting therefore means:
 
 **Stuck means inactive, not slow.** Elapsed time is not evidence: healthy implementer and
 test-worker dispatches commonly run 40+ minutes (p90 of ~44 minutes measured). When the watchdog
-fires, check each in-flight worker's transcript or output file modification time, a read-only
-status read. A worker with no new activity for about 15 minutes is stalled, most likely on a
+fires, check each in-flight worker's last activity, a read-only status read. For a native
+subagent, that is the modification time of the output file the Agent tool returned at dispatch,
+or of its transcript under `~/.claude/projects/<project>/<session>/subagents/`. For
+`codex-bridge`, it is the job's state from `/codex:status`. A worker with no new activity for about 15 minutes is stalled, most likely on a
 permission prompt the user cannot see. Inspect the evidence below and surface the stall to the
 user at once, naming the role and the last command it ran. A worker that is still active is
 working; leave it alone. Do not reset the inactivity window for a partial signal, sibling progress,

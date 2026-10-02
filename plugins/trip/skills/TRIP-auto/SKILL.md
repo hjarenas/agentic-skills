@@ -81,7 +81,7 @@ Under `TRIP-auto`, invoke `TRIP-3-release` as a nested release orchestrator. On 
 1. Date/week, SemVer bump in all version files (+ lockfiles), promote the Codex CR to `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md`, changelog file + table, `/wiki-ingest` to fold the change into `docs/archi/`, README version.
 2. Invoke `/wiki-lint --fix` and address the mechanical findings (broken links, index gaps, `links:` drift). Leave judgement calls — contradictions, stale claims, pages wanting a split — for the PR description's Decisions section rather than resolving them unattended.
    Un-migrated projects instead update `docs/ARCHI.md` per `docs/ARCHI-rules.md`.
-3. Commit everything on the feature branch with the one-line release message. **Do not tag, do not merge, do not touch the main branch.**
+3. Commit the reported release paths on the feature branch with the one-line release message (`TRIP-3-release` Step 9). **Do not tag, do not merge, do not touch the main branch.**
 
 ## Phase 4: Pull request (replaces push-to-main)
 

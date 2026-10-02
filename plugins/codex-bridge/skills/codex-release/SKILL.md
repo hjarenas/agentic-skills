@@ -1,6 +1,6 @@
 ---
 name: codex-release
-description: Prepare scoped TRIP release artifacts and perform explicitly authorized release branch, commit, push, and pull-request work
+description: Prepare scoped TRIP release artifacts and perform explicitly authorized release push and pull-request work (the release commit belongs to `codex-workspace`)
 ---
 
 # Codex Release Worker

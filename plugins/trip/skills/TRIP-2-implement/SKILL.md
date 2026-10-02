@@ -15,7 +15,8 @@ Before implementing:
 0. `docs/TRIP.md` must already exist — read it first. It is this project's TRIP profile: name, type, main branch, version file, week anchor, the lint/typecheck/test commands, and the project-specific sections this skill refers to. It is written by `TRIP-init`. If it is missing, stop immediately and tell the user to run `/TRIP-init` first (or `/TRIP-upgrade` for a project set up before TRIP became a plugin). Do not improvise a profile inline — see `TRIP-1-plan`'s Prerequisites for why.
 1. Do **not** read the architecture wiki or query the code graph yourself — that is codebase
    exploration, which the orchestrator boundary reserves for workers. Instead, put it in the
-   first implementer's and batch reviewer's assignments: read `docs/archi/index.md` and the wiki
+   first implementer and batch-reviewer dispatch of every phase (and carry a short summary of what
+   they found in later notes, since each dispatch starts fresh): read `docs/archi/index.md` and the wiki
    pages covering the plan's area, following `[[links]]` one hop (un-migrated projects:
    `docs/ARCHI.md`), and query the code-review-graph MCP tools (`get_minimal_context_tool`, then
    `semantic_search_nodes_tool`/`query_graph_tool` for `callers_of`/`imports_of`, with
@@ -172,7 +173,8 @@ After each implementer report, before requesting the next batch:
    implementer's and fixer's reports list for this batch. Never `git add -A` — it sweeps a
    sibling's half-finished files, or a run that rewrote committed fixtures, into the batch. Require
    `WORKSPACE_COMPLETE` with `git diff --cached --name-only` in the report, and compare that list
-   with the paths you sent; any difference blocks the next batch. Staging is batch-local;
+   with the running union of every path staged so far in this phase (earlier batches stay staged
+   until the phase commit). Any difference blocks the next batch. Staging is batch-local;
    committing happens only at the phase gate.
 6. Have `batch-reviewer` verify completed plan checkboxes against the diff and report exactly
    which checkboxes are done vs. still open. Record the confirmed ones in your notes. Do not start
@@ -312,7 +314,18 @@ Surface reviews verbatim. Keep fixer edits scoped. If a reviewer repeats a findi
 fresh `batch-reviewer` to determine whether the fix addressed an adjacent concern or the notes
 were incomplete. The testing gate must pass before APPROVED.
 
-Every worker is stateless between dispatches — native subagents start fresh, and `codex-bridge` is stateless by design — so the notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
+Treat every worker as stateless between dispatches — native subagents start fresh, and even a resumed `codex-bridge` thread can be reset or drift — so the notes in step 4 are load-bearing. Skipping them is the single most common cause of a loop that will not converge.
+
+### Commit the integration fixes
+
+Everything that lands after the last phase merge is still uncommitted when the loop converges:
+tests written by the testing gate, fixes from the gate, fixes from the code review, and the
+planner's final checkbox ticks. Dispatch `workspace-worker` to stage those by explicit path — the
+union of the paths those reports list — and commit them on the feature branch. Then require
+`git status --porcelain` to come back empty. Any remaining entry is either work nobody reported
+or a file a run rewrote: surface it rather than proceeding. `TRIP-3-release` commits only its own
+release artifacts, so anything not committed here would ship without the fixes the review
+approved.
 
 ---
 

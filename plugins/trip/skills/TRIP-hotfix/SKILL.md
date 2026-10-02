@@ -9,7 +9,7 @@ argument-hint: "what is broken in production?"
 
 You are now in **hotfix mode** - a streamlined workflow for urgent production fixes.
 
-> **Warning**: Only use this for genuine emergencies. For regular bugs, use the full TRIP workflow (`TRIP-1-plan` → `TRIP-2-implement`).
+> **Warning**: Only use this for genuine emergencies. For regular bugs, use the full TRIP workflow (`TRIP-1-plan` → `TRIP-2-implement`, or `/TRIP-auto`).
 
 This skill is intentionally exempt from [the agent routing contract](../../references/agent-routing.md)'s worker-dispatch boundary — for a genuine emergency, the orchestrator performs discovery, the fix, and git operations directly rather than paying the coordination cost of dispatching roles. It is **not** exempt from the PR-only rule the rest of TRIP follows (`TRIP-3-release`): a hotfix skips planning depth and review ceremony, never the PR gate. It lands through a pull request like everything else.
 
@@ -24,8 +24,10 @@ Hotfix: $ARGUMENTS
 This skill only runs when the user invokes it, and that choice is the urgency call: do not ask
 again. A confirmation here once left a fix idle for over two hours.
 
-If the description plainly is not urgent (cosmetic, a feature request), say so in one line, name
-`/TRIP-auto` as the usual route, and proceed with the hotfix unless the user redirects.
+If the description is a feature request rather than a defect, stop and redirect it to the normal
+TRIP route (`TRIP-1-plan` → `TRIP-2-implement`, or `/TRIP-auto`): a hotfix skips planning and
+review, which a new feature must not. If it is a real defect that just doesn't look urgent
+(cosmetic, minor), say so in one line and proceed unless the user redirects.
 
 If the report sounds like an outage ("can't log in", "prod is down"), first confirm the defect is
 real and current. Give the user copy-pasteable triage commands built from the profile's deployment

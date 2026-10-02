@@ -63,7 +63,7 @@ Any failure blocks the release — fix or return to `TRIP-2-implement` first.
 steps, dispatched with the plan, `docs/TRIP.md`, the approved review, and the steps below. When
 the artifacts are complete, dispatch `release-verifier` (`codex-release-verify`) read-only to
 check versions, placeholders, changelog links, wiki lint, README, branch safety, and the full
-diff. Placeholders include file names as well as content: any literal `<WEEK>`, `<X.Y.Z>`,
+diff. Placeholders include file names as well as content: in the files Steps 2-8 wrote, any literal `<WEEK>`, `<X.Y.Z>`,
 `x.y.z` or legacy `wa_` in a new path or line is a finding. A literal `wa_` prefix shipped in
 three released file names before this check existed. Require the verifier to end with its
 completion tag; a verdict without the tag is not a verdict. Route corrections back to `release-worker`, then re-verify.
@@ -88,8 +88,10 @@ committing belong to Step 9's single dispatch, after all three have reported. If
 reports work it could only do outside its lane, serialize the remainder rather than widening a
 lane mid-flight: a corrupted release artifact costs more than a slow release.
 
-**Ground truth is `origin`, not local state.** Every `release-worker` and `release-verifier`
-dispatch starts with `git fetch origin` and measures the change as `origin/<main branch>...HEAD`.
+**Ground truth is `origin`, not local state.** Step 1's dispatch runs `git fetch origin` once —
+the three parallel Step 2-8 workers must not fetch concurrently in one repository, where they
+collide on ref locks — and every later `release-worker` and `release-verifier` dispatch measures
+the change as `origin/<main branch>...HEAD`. The verifier, dispatched alone, fetches again first.
 Never measure against local `<main branch>`, which goes stale as soon as another PR merges.
 Measuring against it has produced false claims: "this PR ships two releases" when one had already
 merged, and wrong path counts that the verifier then "confirmed". Every figure written into a
@@ -231,7 +233,11 @@ contains only intended release work and remains on the feature branch.
 git -C <worktree> add -- <paths reported by the Steps 2-8 release workers>
 git -C <worktree> diff --cached --name-only    # must equal that path list
 git -C <worktree> commit -m "<commit message from Step 4>"
+git -C <worktree> status --porcelain             # must be empty
 ```
+
+Any entry left after the commit blocks the push. It is either feature work that
+`TRIP-2-implement` never committed or a file some run rewrote. Surface it; do not sweep it in.
 
 Never `git add -A` here: a test or tool run during the flow can rewrite tracked files outside the
 release (performance baselines, snapshots), and `-A` commits them silently.
@@ -265,7 +271,7 @@ git push -u origin <feature-branch>
 gh pr create --base <main branch — docs/TRIP.md § Project> --title "<commit message from Step 4>" --body-file <generated-description>
 ```
 
-Write the PR description so the reviewer can approve **without reading every file** — it must carry a summary of what was done. Use the PR-description template from the `TRIP-auto` skill (Phase 4): Summary, plan/version/changelog links, what changed by area, decisions made along the way, verification (testing gate + Codex review rounds/verdicts), and an "After merging" checklist (tag `vx.y.z` + push tag, deployment follow-ups such as the deploy workflow triggering on merge).
+Write the PR description so the reviewer can approve **without reading every file** — it must carry a summary of what was done. Use the PR-description template from the `TRIP-auto` skill (Phase 4) exactly as it stands there.
 
 Report the PR URL to the user. **Do not merge the PR yourself.**
 
