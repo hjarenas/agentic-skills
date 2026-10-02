@@ -319,9 +319,11 @@ Treat every worker as stateless between dispatches — native subagents start fr
 ### Commit the integration fixes
 
 Everything that lands after the last phase merge is still uncommitted when the loop converges:
-tests written by the testing gate, fixes from the gate, and fixes from the code review. Dispatch
-`workspace-worker` to stage those by explicit path — the union of the paths those reports list —
-and commit them on the feature branch. Then require the post-commit **clean-tree check**
+tests written by the testing gate, fixes from the gate, and fixes from the code review. If any
+plan checkbox confirmed by review is still unticked, first dispatch `planner` (lane: the plan file)
+to tick it. Then dispatch `workspace-worker` to stage all of it by explicit path — the union of
+the paths those reports list, plus the plan file when it was ticked — and commit it on the
+feature branch. Then require the post-commit **clean-tree check**
 (`agent-routing.md`). Any remaining entry is either work nobody reported or a file a run
 rewrote: surface it rather than proceeding. Repeat this step whenever later work lands in the
 feature worktree, including the "No, there are remaining items" path below. `TRIP-3-release` commits only its own
@@ -336,7 +338,6 @@ The worktree used throughout this flow persists unchanged into `TRIP-3-release` 
 
 After Codex converges (or is skipped):
 
-- Cross the corresponding checkboxes in the plan todo list (if any)
 - In a standalone run, then **use the `AskUserQuestion` tool** to ask:
   - **Question**: "Is the implementation complete?"
   - **Options**: "Yes, everything is complete" (proceed to release), "No, there are remaining items" (continue working)

@@ -97,7 +97,8 @@ Depending on the feature (major, minor, patch), propose a new version using SemV
 ### Required Sections
 
 Use the template and Quality Standards at `plan-template.md` in this skill's directory — copy its
-structure into the new plan file, filling every bracketed placeholder.
+structure into the new plan file, filling every bracketed placeholder. Pass that file's absolute
+path in every `planner` assignment; the planner cannot locate this skill's directory on its own.
 
 ---
 
