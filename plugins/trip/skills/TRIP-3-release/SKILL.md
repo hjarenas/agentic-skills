@@ -63,7 +63,10 @@ Any failure blocks the release — fix or return to `TRIP-2-implement` first.
 steps, dispatched with the plan, `docs/TRIP.md`, the approved review, and the steps below. When
 the artifacts are complete, dispatch `release-verifier` (`codex-release-verify`) read-only to
 check versions, placeholders, changelog links, wiki lint, README, branch safety, and the full
-diff. Route corrections back to `release-worker`, then re-verify.
+diff. Placeholders include file names as well as content: in the files Steps 2-8 wrote, any literal `<WEEK>`, `<X.Y.Z>`,
+`x.y.z` or legacy `wa_` in a new path or line is a finding. A literal `wa_` prefix shipped in
+three released file names before this check existed. Require the verifier to end with its
+completion tag; a verdict without the tag is not a verdict. Route corrections back to `release-worker`, then re-verify.
 
 **These steps are not one serial dispatch.** Release is the tail of every flow and the phase most
 often left waiting on a single worker grinding through eight unrelated edits, with the wiki
@@ -84,6 +87,18 @@ the path sets listed above are already disjoint, so state them as lanes and disp
 committing belong to Step 9's single dispatch, after all three have reported. If any dispatch
 reports work it could only do outside its lane, serialize the remainder rather than widening a
 lane mid-flight: a corrupted release artifact costs more than a slow release.
+
+**Ground truth is `origin`, not local state.** Step 1's dispatch runs `git fetch origin` once —
+the three parallel Step 2-8 workers must not fetch concurrently in one repository, where they
+collide on ref locks — and every later `release-worker` and `release-verifier` dispatch measures
+the change as `origin/<main branch>...HEAD`. The verifier, dispatched alone, fetches again first.
+Never measure against local `<main branch>`, which goes stale as soon as another PR merges.
+Measuring against it has produced false claims: "this PR ships two releases" when one had already
+merged, and wrong path counts that the verifier then "confirmed". Every figure written into a
+release artifact (counts, test totals, file lists) must come from a command run in that dispatch,
+and the report names the command. Brief the verifier with the commands that derive each figure,
+not with your own numbers: an orchestrator-supplied count was once wrong by one and was checked
+against itself.
 
 Run `release-verifier` once, after all of Steps 1-8 have landed, over the combined diff. Verifying
 per-worker would miss the cross-file consistency (version vs changelog vs README) that is the main
@@ -111,7 +126,7 @@ Use the project week in all subsequent steps.
 
 ### Step 3: Promote Code Review
 
-Now that week (`a`) and version (`x.y.z`) are known:
+Now that week (`<WEEK>`) and version (`x.y.z`) are known:
 
 1. Retrieve the stored review — invoke `codex-code-review show <plan-path>`, or read it directly:
    ```bash
@@ -131,7 +146,7 @@ Now that week (`a`) and version (`x.y.z`) are known:
    artifacts (changelog, wiki, version files, the CR itself) as well as the feature files; note
    which subset each review round actually re-examined.
 
-4. Save to `docs/3-code-review/CR_wa_vx.y.z.md`.
+4. Save to `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md`.
 
 5. Verify: no `<...>` placeholders, no `PROMOTION_READY`, version matches version file, **Files
    Reviewed** count matches the reconciled change set.
@@ -142,15 +157,15 @@ Propose a one-line commit message.
 
 ### Step 5: Changelog File
 
-Create `docs/2-changelog/wa_vx.y.z.md` (a=project week, x.y.z=version):
+Create `docs/2-changelog/w<WEEK>_v<X.Y.Z>.md` (`<WEEK>` = project week number, `<X.Y.Z>` = version — e.g. `w9_v0.35.0`; never leave the placeholder literal):
 
 ```markdown
-# Changelog - Week a, DD-MM-YYYY, V. x.y.z
+# Changelog - Week <WEEK>, DD-MM-YYYY, V. x.y.z
 
-**Release Date**: Week a, DD-MM-YYYY at HH:MM
+**Release Date**: Week <WEEK>, DD-MM-YYYY at HH:MM
 **Version**: x.y.z (previously x0.y0.z0)
 **Object**: the commit message
-**Code review**: `docs/3-code-review/CR_wa_vx.y.z.md` (Codex loop, N rounds -> verdict)
+**Code review**: `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md` (Codex loop, N rounds -> verdict)
 
 ## Changes
 
@@ -162,7 +177,7 @@ Create `docs/2-changelog/wa_vx.y.z.md` (a=project week, x.y.z=version):
 Add entry on top of `docs/2-changelog/changelog_table.md`:
 
 ```markdown
-| `x.y.z` | a | the commit message |
+| `x.y.z` | <WEEK> | the commit message |
 ```
 
 Also add a summary entry in the Changelog Summary section.
@@ -202,25 +217,30 @@ Also update relevant sections whenever needed.
 
 ---
 
-After completing all documentation steps in a standalone release run, **use the
-`AskUserQuestion` tool** to ask:
-
-- **Question**: "All documentation steps are complete. Ready to commit and open the pull request?"
-- **Options**: "Yes, open the PR" (commit on the feature branch, push, open PR), "Not yet" (review changes first)
-
-Suppress this prompt when this skill runs as a child of `TRIP-auto`; the parent has already
-authorized proceeding through the release-documentation steps without further confirmation.
-
-In a standalone run, **ONLY after user selects "Yes"**, proceed:
+After the documentation steps, continue straight to the commit and the pull request without
+asking. Invoking this skill (or approving the plan under `TRIP-auto`) already authorized the
+release. The pull request is the user's review point, and nothing merges without them. A
+"ready to open the PR?" question here once sat unanswered for 12 hours after the user had typed
+"do it".
 
 ## Step 9: Commit (on the feature branch)
 
-Dispatch this step to `release-worker`, then have `release-verifier` confirm the commit contains
-only intended release work and remains on the feature branch.
+Dispatch this step to `workspace-worker` (`codex-workspace`), which owns the git index, with the
+explicit paths the release workers reported. Then have `release-verifier` confirm the commit
+contains only intended release work and remains on the feature branch.
 
 ```bash
-git add -A && git commit -m "<commit message from Step 4>"
+git -C <worktree> add -- <paths reported by the Steps 2-8 release workers>
+git -C <worktree> diff --cached --name-only    # must equal that path list
+git -C <worktree> commit -m "<commit message from Step 4>"
+git -C <worktree> status --porcelain -- . ':!.codex-bridge'   # must print nothing
 ```
+
+Any entry left after the commit blocks the push. It is either feature work that
+`TRIP-2-implement` never committed or a file some run rewrote. Surface it; do not sweep it in.
+
+Never `git add -A` here: a test or tool run during the flow can rewrite tracked files outside the
+release (performance baselines, snapshots), and `-A` commits them silently.
 
 **Important**: Only use the commit message. Do NOT add Co-Authored-By or any other trailer. **Do not tag, do not merge, do not touch the main branch** — the release lands through a pull request.
 
@@ -251,7 +271,7 @@ git push -u origin <feature-branch>
 gh pr create --base <main branch — docs/TRIP.md § Project> --title "<commit message from Step 4>" --body-file <generated-description>
 ```
 
-Write the PR description so the reviewer can approve **without reading every file** — it must carry a summary of what was done. Use the PR-description template from the `TRIP-auto` skill (Phase 4): Summary, plan/version/changelog links, what changed by area, decisions made along the way, verification (testing gate + Codex review rounds/verdicts), and an "After merging" checklist (tag `vx.y.z` + push tag, deployment follow-ups such as the deploy workflow triggering on merge).
+Write the PR description so the reviewer can approve **without reading every file** — it must carry a summary of what was done. Use the PR-description template from the `TRIP-auto` skill (Phase 4) exactly as it stands there.
 
 Report the PR URL to the user. **Do not merge the PR yourself.**
 

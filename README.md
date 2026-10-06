@@ -144,8 +144,8 @@ flowchart TD
         RW["release-worker<br/>version · CR · changelog · wiki · README"]
         RW --> RV{"release-verifier<br/>RELEASE_APPROVED?"}
         RV -->|changes| RW
-        RV -->|yes| UR{"user authorizes PR?"}
-        UR -->|yes| RP["release-worker<br/>commit · push · open PR"]
+        RV -->|yes| RC["workspace-worker<br/>commit reported paths"]
+        RC --> RP["release-worker<br/>push · open PR"]
         RP --> RPV{"release-verifier<br/>branch + PR check"}
         RPV -->|changes| RW
         RPV -->|approved| DONE["user reviews and merges PR"]
@@ -176,7 +176,8 @@ flowchart TD
 
 3. **`/TRIP-3-release <plan>`** — a release worker bumps the version, promotes the review, writes
    changelogs, ingests the wiki, and updates the README. An independent release verifier checks
-   the artifacts before the release worker commits, pushes, and opens the PR.
+   the artifacts; a workspace worker commits exactly the reported paths, and the release worker
+   pushes and opens the PR.
 
 **Off the main line:** `/TRIP-research` (investigate, with `codex-ask` to red-team the conclusion),
 `/TRIP-hotfix` (skip the ceremony for urgent fixes), `/TRIP-review` (audit a past version),

@@ -43,7 +43,13 @@ After all batches for a phase are staged, run its gate before merging:
 2. Dispatch `test-worker` for the lint, typecheck/build, and affected tests from the Testing Gate
    below, explicitly scoped to that phase's files. Route failures to `fixer` and re-run the phase
    gate.
-3. On pass, the phase is **merge-ready**. Dispatch `workspace-worker` to commit on the phase
+3. Dispatch `planner` once, its lane the plan file alone, to tick every checkbox the batch
+   reviews confirmed for this phase. That way the ticks land in the phase's own commit.
+4. On pass, the phase is **merge-ready**. Dispatch `workspace-worker` to stage by path the plan file
+   (it holds step 3's ticks) and every path listed in the fixer reports from steps 1-2; batch
+   staging covered neither. Before committing, the phase worktree must pass the pre-commit
+   **clean-tree check** (`agent-routing.md`), and any remaining entry is unreported work to
+   surface. Then commit on the phase
    branch; record that phase branch's expected tip before dispatch. Merge it into the feature
    branch with `git merge --no-ff`, push the feature branch, remove the phase worktree, and delete
    the phase branch. Before deleting, require `git merge-base --is-ancestor <phase-tip>
@@ -55,11 +61,12 @@ After all batches for a phase are staged, run its gate before merging:
    Pushing here keeps the remote feature branch in sync with each local phase merge as it lands,
    the same way `TRIP-1-plan` pushes eagerly at persist time.
 
-**Merge/cleanup is serialized.** Implementation and gating (steps 1-2 above) stay parallel across
-phases — each phase runs in its own isolated worktree with no shared mutable state. But step 3
+**Merge/cleanup is serialized.** Implementation, gating and ticking (steps 1-3 above) stay parallel
+across phases — each phase runs in its own isolated worktree with no shared mutable state. But step
+4
 mutates the shared feature-branch worktree, and a single working tree/`.git` is not safe for
 concurrent mutating git operations. If multiple phases become merge-ready around the same time,
-dispatch step 3 for one phase at a time, and hold that phase's merge slot — no other phase's merge
+dispatch step 4 for one phase at a time, and hold that phase's merge slot — no other phase's merge
 may be dispatched against the feature worktree — from the moment its merge/cleanup step begins
 until that *same* phase's merge is fully resolved and the feature worktree is back to a clean,
 non-mid-merge state. A `WORKSPACE_BLOCKED` report does **not** release the slot: it surfaces a
@@ -72,7 +79,7 @@ parallel until they need the slot.
 On the normal report path, that same phase's `WORKSPACE_COMPLETE` proves both that its merge
 landed and that cleanup finished, so release the slot.
 
-If that phase's merge/cleanup worker stays silent through the bounded wait in `agent-routing.md`'s
+If that phase's merge/cleanup worker stalls (the inactivity test) in `agent-routing.md`'s
 **Waiting for a worker**, keep the slot held and dispatch a **new, read-only `workspace-worker`
 audit**. The orchestrator runs no git itself, as required by `agent-routing.md`'s **Orchestrator
 boundary**. Give the auditor the recorded expected tip of that specific phase branch and require

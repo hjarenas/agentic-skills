@@ -9,7 +9,7 @@ argument-hint: "what is broken in production?"
 
 You are now in **hotfix mode** - a streamlined workflow for urgent production fixes.
 
-> **Warning**: Only use this for genuine emergencies. For regular bugs, use the full TRIP workflow (`TRIP-1-plan` → `TRIP-2-implement`).
+> **Warning**: Only use this for genuine emergencies. For regular bugs, use the full TRIP workflow (`TRIP-1-plan` → `TRIP-2-implement`, or `/TRIP-auto`).
 
 This skill is intentionally exempt from [the agent routing contract](../../references/agent-routing.md)'s worker-dispatch boundary — for a genuine emergency, the orchestrator performs discovery, the fix, and git operations directly rather than paying the coordination cost of dispatching roles. It is **not** exempt from the PR-only rule the rest of TRIP follows (`TRIP-3-release`): a hotfix skips planning depth and review ceremony, never the PR gate. It lands through a pull request like everything else.
 
@@ -21,16 +21,18 @@ Hotfix: $ARGUMENTS
 
 ## Step 1: Assess Urgency
 
-Before proceeding, confirm this is a genuine hotfix:
+This skill only runs when the user invokes it, and that choice is the urgency call: do not ask
+again. A confirmation here once left a fix idle for over two hours.
 
-**Use the `AskUserQuestion` tool** to confirm urgency:
+If the description is a feature request rather than a defect, stop and redirect it to the normal
+TRIP route (`TRIP-1-plan` → `TRIP-2-implement`, or `/TRIP-auto`): a hotfix skips planning and
+review, which a new feature must not. If it is a real defect that just doesn't look urgent
+(cosmetic, minor), say so in one line and proceed unless the user redirects.
 
-- **Question**: "Is this a production-critical issue that cannot wait for the normal TRIP workflow?"
-- **Options**: "Yes — critical issue" (security vulnerability, data corruption, service outage, or critical user-facing bug), "No — regular bug" (redirect to `TRIP-1-plan` for proper workflow)
-
-**If "No"**: Redirect to `TRIP-1-plan` for proper workflow.
-
-**If "Yes"**: Proceed with hotfix.
+If the report sounds like an outage ("can't log in", "prod is down"), first confirm the defect is
+real and current. Give the user copy-pasteable triage commands built from the profile's deployment
+details (`docs/TRIP.md`), with `2>&1` on anything whose errors go to stderr. A transient failure
+needs no fix.
 
 ---
 

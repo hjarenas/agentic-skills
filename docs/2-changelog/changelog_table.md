@@ -2,6 +2,7 @@
 
 | Version   | Week | Commit Message                  |
 | --------- | ---- | -------------------------------- |
+| `1.8.0`   | 8    | fix(trip): stop silent stalls, polling cost and redundant questions |
 | `1.7.1`   | 3    | fix(trip): make TRIP-upgrade standalone migrations reachable |
 | `1.7.0`   | 2    | feat(trip): add worker lanes, worktree bootstrap and release fan-out |
 | `1.6.0`   | 2    | feat(trip): add orchestrator bounded-wait and lost-report recovery contract |
@@ -9,6 +10,18 @@
 | `0.1.0`   | 1    | chore: initialize TRIP workflow |
 
 # Changelog Summary
+
+- **v1.8.0 (Waiting by Inactivity, Worker Dispatch Discipline, Origin as Release Ground Truth — Week 8, 02-10-2026)**:
+  - **Evidence**: a month of downstream `crm` runs (32 sessions, 1,728 worker dispatches). The review gates earned their cost; time and tokens leaked between them
+  - **`trip` (1.7.1 → 1.8.0)**: stall detection by worker inactivity (about 15 min) instead of a flat 20-minute cap that fired on healthy 44-minute-p90 workers. One watchdog per flow, no-op polling banned (one run spent 2.9 B tokens on 1,613 `true` calls), and no ending a turn idle
+  - **Dispatch contract**: a literal location check, reports of about 25 lines, foreground-only commands, `BLOCKED` on a denied tool, and no `TRIP-*` skills inside workers. A new "Talking to the user" section: plain language, status without "keep going?", and no re-asking
+  - **Staging by path**: `git add -A` is removed. Batches are staged by explicit path, a new integration-fix commit follows the code-review loop (its absence was a Critical caught in review), and one clean-tree check, which excludes `.codex-bridge/`, guards every commit. Checkboxes are ticked once per phase gate
+  - **Release**: `origin` is the ground truth (one fetch in Step 1) and every figure cites its command. The commit goes through `workspace-worker`, the pre-PR question is dropped, and `wa_vx.y.z` becomes `w<WEEK>_v<X.Y.Z>`; the literal `wa_` had shipped in released file names
+  - **Fewer stalling questions**: TRIP-1 runs plan review without asking, TRIP-hotfix stops re-confirming urgency and redirects feature requests, and TRIP-auto forbids self-set checkpoints. The PR template gains a Scope section
+  - **Model routing**: a blank row falls back to the agent file, then the orchestrator model (36 dispatches once went silently to the top tier). A `subagent:<agent-name>` harness value covers pinned agents carrying `effort:`
+  - **`codex-bridge` (1.2.2 → 1.2.3)**: placeholder rename; leftovers are re-dispatched; long batches end the turn; the release commit is no longer owned by `codex-release`
+  - **Agent definitions**: `disallowedTools` additions, `model:` defaults, "Worker basics", and ownership fixes, reviewed as a patch and applied unchanged in their own commit, because the release session's permission check blocked direct edits to agent files
+  - **Code review**: independent `code-reviewer`, 3 rounds -> APPROVED (its condition, the agent patch, met); 1 Critical, 10 Major, 18 Minor and 3 Suggestions, all addressed (`docs/3-code-review/CR_w8_v1.8.0.md`)
 
 - **v1.7.1 (Reachable TRIP-upgrade Standalone Migrations — Week 3, 24-08-2026)**:
   - **`trip` (1.7.0 → 1.7.1)**: patch fixing a defect in 1.7.0 — the two standalone `TRIP-upgrade` migrations it added (worktree-bootstrap subsection, `git worktree` permission allowlist) claimed to run "on every upgrade path", but nothing implemented that and they were unreachable for exactly the projects needing them

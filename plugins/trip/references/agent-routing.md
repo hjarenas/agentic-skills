@@ -37,7 +37,7 @@ fall back to doing the work in the orchestrator context.
 | `test-worker` | Test authoring and execution of the requested gate | Code-review verdict |
 | `code-reviewer` | Independent full-change review and verdict | Editing the change it reviews |
 | `workspace-worker` | Branch checkout/creation, worktree add/remove and `--no-ff` merges for the flow and phase lifecycle, staging, commits, pushes, and status reports | Product changes or approval verdicts |
-| `release-worker` | Version/docs/changelog/commit/PR preparation | Declaring an unverified implementation ready |
+| `release-worker` | Version/docs/changelog preparation, push, and PR creation (the release commit is `workspace-worker`'s) | Declaring an unverified implementation ready |
 | `release-verifier` | Verify release artifacts, branch safety, and PR readiness | Producing the release artifacts it verifies |
 
 Keep reviewer roles independent from the worker whose artifact they review. A worker may be
@@ -87,22 +87,31 @@ Supported harness values:
   consistency work regardless. Include the selected model/effort when the harness supports those
   fields.
 
-  **Upgrade note**: these named agents ship as `plugins/trip/agents/*.md`, auto-discovered like
-  skills — a project running an older cached `trip` install (before this file existed) will not
-  have them yet, and a dispatch to `trip:<role>` fails with an "Unknown agent" error, the same
-  failure class as an un-reloaded skill (the repo `README.md`'s "codex-bridge" install step notes
-  the identical symptom for a plugin whose skills haven't registered yet). That error is
-  diagnostic, not a routing dead end: retry the *same* dispatch
-  with `general-purpose` instead for this one call, tell the user the `trip` plugin needs
-  `/plugin marketplace update` (or a fresh install) followed by `/reload-plugins` or a full
-  restart, and say so explicitly in your report rather than silently falling back for the rest of
-  the run — once reloaded, later dispatches in the same session pick up the real named agents
-  again without further action. No project's `docs/TRIP.md` needs editing for this upgrade; the
-  subagent-type choice lives here, not in the per-project routing table.
+  An "Unknown agent" error for `trip:<role>` means a stale plugin install: retry that one
+  dispatch with `general-purpose` and tell the user to run `/plugin marketplace update` and then
+  `/reload-plugins`.
+- `subagent:<agent-name>`: launch the named native agent instead of `trip:<role>`. It is for a
+  project's pinned copy of a role's agent (see *Model and effort on the subagent harness* below);
+  the copy must keep the role's contract and completion tags.
 - `codex-bridge`: invoke the role mapping below. Pass model/effort as explicit per-run overrides;
   do not mutate `.codex/config.toml`.
 - `skill:<name>`: invoke the named installed worker skill, including the role, artifact, scope,
   completion contract, and requested model/effort in the assignment.
+
+### Model and effort on the subagent harness
+
+When a role's row names a model, pass it as `model` on every dispatch, and re-read this table after
+any compaction rather than recalling it. When the row is blank, the agent file decides: its
+`model:` frontmatter, or — when that is absent too — the orchestrator's own model. That last
+fallback is silent and expensive: one observed run lost its routing line to a compaction and sent
+36 worker dispatches in a row to the orchestrator's top-tier model. So leave a row blank only when the
+role's agent file sets a `model:` you accept, or running that role on the orchestrator's model is
+acceptable.
+
+The Effort column has no effect on a plain `subagent` dispatch, because the Agent tool takes no
+effort field. To pin a role's effort, keep a copy of the role's agent with `model:` and `effort:`
+in its frontmatter under the project's `.claude/agents/`, then route the role to it with
+`subagent:<agent-name>`. Run `/reload-plugins` (or restart) so the new agent type registers.
 
 An invocation may begin with routing overrides:
 
@@ -159,8 +168,31 @@ Every assignment must include:
 1. role and harness/model/effort selection;
 2. exact input artifacts and scoped objective;
 3. allowed write paths or a read-only constraint;
-4. verification expected from that worker; and
-5. a completion tag and concise report format.
+4. verification expected from that worker;
+5. a completion tag and a short report format — about 25 lines at most: files, counts, verdict,
+   and one short entry per finding (`file:line` and the fix). No narrative, pasted diffs or logs;
+   and
+6. for any worker that touches a worktree, its **location check**: the absolute path and the
+   literal first command `cd <path> && pwd && git rev-parse --show-toplevel && git branch
+   --show-current`, with the expected output and "on any mismatch, stop and report". A dispatch
+   that *creates* the worktree checks the primary checkout instead, then runs the check against
+   the new path once it exists. Workers
+   prefix every later command with `cd <path> &&` or use `git -C <path>`; the shell's directory
+   does not reliably persist between commands, and "work in the worktree" alone has repeatedly
+   sent workers — weaker models especially — into the primary checkout or a misspelled sibling
+   path.
+
+Report length is a cost, not a style choice: every report lands in the orchestrator's context and
+is re-read on every later turn. Measured over one month of runs, full worker reports were the
+largest single source of orchestrator context and the main driver of compactions.
+
+Never tell a worker to invoke a `TRIP-*` skill. The phase skills are orchestrators; a worker that
+loads one starts improvising orchestration (worktree tools, nested dispatch) and has hung on the
+resulting permission prompt. Pass the concrete steps instead. Every worker runs in the foreground:
+it keeps each command under about 8 minutes, never backgrounds a command or waits on a
+notification, and on a denied or approval-pending tool call stops at once with
+`BLOCKED: <command> — <reason>` and its non-success tag. A permission prompt raised inside a
+background worker may never reach the user — such waits have run for 10 and 16 hours.
 
 The orchestrator consumes reports, not hidden worker context. Carry decisions, corrections, and
 open findings explicitly into every subsequent assignment. Dispatch independent roles in
@@ -205,6 +237,19 @@ reset, it reports that with its blocked tag and stops, leaving the decision to t
 worker's judgment that the work at risk is worthless has been wrong before, and the loss is
 silent.
 
+### Clean-tree check
+
+Several steps require a worktree to hold no unreported work. The **clean-tree check** is:
+
+- **after a commit**: `git -C <wt> status --porcelain -- . ':!.codex-bridge'` prints nothing;
+- **before a commit**, when staged entries are expected: `git -C <wt> diff --name-only -- .
+  ':!.codex-bridge'` and `git -C <wt> ls-files -o --exclude-standard -- . ':!.codex-bridge'` both
+  print nothing.
+
+`.codex-bridge/` is excluded because `codex-bridge` keeps its state in the worktree it runs in;
+projects should also gitignore it (`TRIP-init` Phase 6). Any other entry is either work nobody
+reported or a file some run rewrote. Surface it rather than sweeping it in with `git add -A`.
+
 **Scope every worker-run test command explicitly** — never leave a `test-worker` (or an
 `implementer`/`fixer` running its own verification) to decide how much of the suite to run. A
 `subagent`-harness worker's own long-running command is subject to the Bash tool's force-background
@@ -231,17 +276,38 @@ assignment with no on-disk output, record explicitly that no artifact is expecte
 
 Any turn whose only purpose is to learn whether a dispatched worker has reported counts as waiting:
 re-read status, re-list agents, schedule a timer, or take a no-op turn to check again. Different
-routing work is not waiting.
+routing work is not waiting. **Every waiting turn re-reads the orchestrator's whole context**, so
+waiting turns are the most expensive thing an orchestrator does. One observed run made 1,613 no-op
+`true` calls and spent 2.9 B input tokens doing nothing else.
 
-Arm a duration-bearing background wait whose command exits when about 5 minutes elapse, and whose
-exit notifies the orchestrator. Use `Monitor` on that command, or a backgrounded Bash `until`-loop
-with `sleep`; do not use `Monitor.timeout_ms` for cadence because it kills the monitor instead of
-blocking the caller. End the turn and let the notification or report wake the orchestrator.
+A background worker's completion notification is the primary wake signal; you do not need to poll
+for it. Waiting therefore means:
 
-Leave about 5 minutes between checks. Cap at 3 check turns or about 20 minutes total per dispatch,
-whichever comes first — then inspect the evidence, surface any ambiguity, and let the user decide.
-Do not reset either ceiling for a partial signal, sibling progress, or a child orchestrator saying
-it is still working.
+- **End the turn.** Never call a tool only to pass time or check status: no `true`/`:` no-ops, no
+  foreground `sleep` or `until` loops, no `ListAgents` or status reads on a timer, and no blocking
+  output read for a worker whose notification will arrive anyway.
+- **One watchdog per flow, not per dispatch.** While at least one worker is in flight, keep exactly
+  one background wait armed — a `Monitor` on, or backgrounded Bash `until`-loop around, a command
+  that exits after about 15 minutes. Do not use `Monitor.timeout_ms` for cadence; it kills the
+  monitor instead of blocking the caller. When it fires and a worker is still in flight, check
+  once and re-arm it. Do not arm a second one beside it. When nothing is in flight, stop it.
+  Ignore a stale watchdog firing that predates a report you have already handled; do not answer
+  it with a turn of its own.
+- **Never end a turn idle.** Before ending a turn while the flow still has work, confirm that a
+  worker is in flight with the watchdog armed, or that you are asking the user a question. Ending a
+  turn with remaining phases and nothing in flight stalls the run silently until the user notices —
+  observed as a phase committed and the next one never dispatched, found 7 hours later.
+
+**Stuck means inactive, not slow.** Elapsed time is not evidence: healthy implementer and
+test-worker dispatches commonly run 40+ minutes (p90 of ~44 minutes measured). When the watchdog
+fires, check each in-flight worker's last activity, a read-only status read. For a native
+subagent, that is the modification time of the output file the Agent tool returned at dispatch,
+or of its transcript under `~/.claude/projects/<project>/<session>/subagents/`. For
+`codex-bridge`, it is the job's state from `/codex:status`. A worker with no new activity for about 15 minutes is stalled, most likely on a
+permission prompt the user cannot see. Inspect the evidence below and surface the stall to the
+user at once, naming the role and the last command it ran. A worker that is still active is
+working; leave it alone. Do not reset the inactivity window for a partial signal, sibling progress,
+or a child orchestrator saying it is still working.
 
 Never ping a child observed as live and still working to ask whether it is done. Absence of a
 report and elapsed time alone do not show that the child stopped; use observed child status, never
@@ -260,7 +326,7 @@ Cross-session messaging is frequently fallible: about one report in three was lo
 session after its work landed. Treat reconstruction from the surviving artifact as a normal path,
 not an emergency procedure.
 
-At the cap, inspect in this order:
+When a worker is stalled (inactive, as defined above), inspect in this order:
 
 1. Compare each named output with its recorded baseline. Require a post-dispatch hash change or a
    new file, and validate that the delta has the shape the assignment required.
@@ -279,10 +345,27 @@ child status is the only available signal but cannot reconstruct the missing rep
 surface. Where `ListAgents` is unavailable, as noted above, stop and surface any ambiguity rather
 than infer completion or wait longer. Proof of completion is observed, never inferred.
 
-Apply the cap independently at every level of a nested wait; do not extend a parent's cap because
-its child orchestrator is itself waiting. Accept a late report after reconstructed completion as
+Apply the inactivity test independently at every level of a nested wait; a child orchestrator that
+is itself waiting is not activity on the parent's behalf. Accept a late report after reconstructed completion as
 confirmation; do not re-run the assignment or apply its result twice.
 
 When stopping, do not retry the dispatch. Report the role and assignment, the completion evidence
 found and missing, every partial artifact path, and the choices to resume from the artifact or
 re-dispatch. Surface these choices; the user picks one.
+
+## Talking to the user
+
+The user often reads these messages on a phone, between other work, hours after they were written.
+Write every question and status update for that reader:
+
+- **Plain language, consequence first.** Say what happens under each option before explaining why.
+  No internal labels — phase or batch numbers, decision IDs, requirement codes, shorthand such as
+  "bank it" — without a plain gloss next to them, and name source documents by filename.
+- **Status replies are status.** When asked how a run is going, give phase and batch progress,
+  what is running now, and blockers. Do not end with "keep going or pause?": the run continues
+  unless the user says stop.
+- **Don't re-ask a decision just made.** The user's latest instruction overrides the plan, a
+  handover brief, and earlier answers. When the user has just authorized a step — invoked the skill
+  that performs it, or said "do it" — skip that step's built-in confirmation.
+- **Recommend the request's goal.** A recommended option must never quietly drop the request's
+  primary objective; if that objective is infeasible, say so plainly as its own point.

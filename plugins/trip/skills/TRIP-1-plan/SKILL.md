@@ -97,7 +97,8 @@ Depending on the feature (major, minor, patch), propose a new version using SemV
 ### Required Sections
 
 Use the template and Quality Standards at `plan-template.md` in this skill's directory — copy its
-structure into the new plan file, filling every bracketed placeholder.
+structure into the new plan file, filling every bracketed placeholder. Pass that file's absolute
+path in every `planner` assignment; the planner cannot locate this skill's directory on its own.
 
 ---
 
@@ -116,15 +117,13 @@ self-check) must also confirm the plan against `plan-template.md`'s Quality Stan
 — cite where the plan falls short of Zero Ambiguity, File-Level Specificity, Architecture
 Alignment, or Risk Assessment, not just that the required sections exist.
 
-### Confirm
+### When to run it
 
-`AskUserQuestion`: "I'll run an independent second-opinion reviewer and iterate until clean. Proceed?"
-Options: "Yes, run review" (recommended) / "Skip review, go to user review" / "Cap iterations at N"
-
-Suppress this prompt when this skill runs as a child of `TRIP-auto`; the parent owns review
-convergence and the interim checkpoint.
-
-Skip for trivial plans (single-file, low-risk). Run for non-trivial (new module, schema/algorithm change).
+Run the review without asking: the user always picked running it, and asking cost an idle hour.
+Skip it only for trivial plans (single-file, low-risk) or when the invocation says to skip it, and
+honour an iteration cap given in the invocation. Run it for anything non-trivial (new module,
+schema or algorithm change). Under `TRIP-auto`, the parent owns review convergence and the interim
+checkpoint.
 
 ### Loop
 

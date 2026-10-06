@@ -1,8 +1,8 @@
 ---
 title: Worktree parallelism
 status: current
-updated: 2026-08-23
-verified-at: 1.7.0
+updated: 2026-10-02
+verified-at: 1.8.0
 links: [trip-plugin, codex-bridge-plugin]
 ---
 
@@ -97,7 +97,11 @@ serialized behind the approvals rather than behind any real dependency.
 ## Phase gate and serialized merge
 
 Each phase's batch loop runs its own delta review and scoped testing gate exactly as a
-single-phase flow would. Once a phase clears that gate, `workspace-worker` commits on the phase
+single-phase flow would. Batches are staged by explicit path, never `git add -A`, and the
+worker's staged list is compared against the paths the batch reported (since `trip` 1.8.0). Once a
+phase clears that gate, one `planner` dispatch ticks every plan checkbox the batch reviews confirmed
+for it, so the ticks land in the phase's own commit; before 1.8.0 a planner dispatch per batch did
+only that, about a third of all planner dispatches. Then `workspace-worker` commits on the phase
 branch, merges it into the feature branch with `git merge --no-ff`, pushes the feature branch,
 removes the phase worktree, and deletes the phase branch
 (`plugins/trip/skills/TRIP-2-implement/SKILL.md`, "Phase gate and merge").

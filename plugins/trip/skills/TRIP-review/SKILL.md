@@ -46,7 +46,7 @@ Do not copy the checklist into output — link to it.
 
 ## Create Review File
 
-Save to `docs/3-code-review/CR_wa_vx.y.z.md` (a=project week, x.y.z=version).
+Save to `docs/3-code-review/CR_w<WEEK>_v<X.Y.Z>.md` (`<WEEK>` = project week number, `<X.Y.Z>` = version — e.g. `w9_v0.35.0`; never leave the placeholder literal).
 
 Render the skeleton from `docs/3-code-review/cr-template.md`:
 1. Copy the markdown block from that file.

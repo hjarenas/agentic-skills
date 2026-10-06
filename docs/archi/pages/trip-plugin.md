@@ -1,8 +1,8 @@
 ---
 title: trip plugin
 status: current
-updated: 2026-08-24
-verified-at: 1.7.1
+updated: 2026-10-02
+verified-at: 1.8.0
 links: [distribution, trip-wiki-plugin, codex-bridge-plugin, worktree-parallelism]
 ---
 
@@ -53,10 +53,41 @@ worktree artifacts
 
 Cross-session report delivery failed for a substantial fraction of reports in an observed run, while
 the work survived in its worktree. Every orchestrator therefore follows `agent-routing.md`'s
-**Waiting for a worker** section: waits are bounded and passive, a live worker is never polled or
-pinged for progress, and a missing report is not evidence that work is missing. Completion is
-reconstructed only from validated artifact changes and observable status; the durable artifact
-takes precedence over the fallible report transport.
+**Waiting for a worker** section: waits are passive, a live worker is never polled or pinged for
+progress, and a missing report is not evidence that work is missing. Completion is reconstructed
+only from validated artifact changes and observable status; the durable artifact takes precedence
+over the fallible report transport.
+
+Since 1.8.0 a worker counts as stuck only when it is **inactive**: no new transcript or output
+activity for about 15 minutes. Elapsed time no longer counts. The 1.6.0 flat cap (3 checks or about
+20 minutes) fired on healthy workers whose p90 runtime is about 44 minutes, and a worker that
+really was stuck was usually waiting on a permission prompt invisible to the user, for 10 and 16
+hours in two observed runs. An orchestrator keeps one watchdog per flow rather than one timer per
+dispatch, may not pass time with no-op tool calls, and may not end a turn with work remaining and
+nothing in flight. Each of those rules answers a measured cost:
+- every waiting turn re-reads the orchestrator's whole context, and one run spent 2.9 B input
+  tokens on 1,613 no-op `true` calls;
+- a phase was once committed with the next never dispatched, and nobody noticed for 7 hours.
+
+## Worker dispatch discipline
+
+`agent-routing.md`'s **Dispatch contract** (1.8.0) adds the rules that a month of downstream runs
+showed workers break when left implicit:
+
+- **Location check.** Each worktree dispatch carries a literal location check
+  (`cd <path> && pwd && git rev-parse --show-toplevel && git branch --show-current`) and the
+  instruction to prefix every later command with `cd <path> &&` or `git -C`. "Work in the worktree"
+  alone repeatedly sent workers into the primary checkout or a misspelled sibling path.
+- **Foreground only, blocked on deny.** Workers keep each command under about 8 minutes, never wait
+  on a notification, and stop with `BLOCKED: <command>` when a tool call is denied.
+- **Short reports.** About 25 lines per report. Full reports were the largest source of
+  orchestrator context and the main cause of compactions.
+- **No `TRIP-*` skill inside a worker.** A worker that loaded `TRIP-3-release` improvised
+  orchestration and hung.
+
+The orchestrator never asks a question the user has just answered, and never ends a status reply
+with "keep going?" (**Talking to the user**). Per batch, `TRIP-2-implement` stages explicit paths
+and leaves checkbox ticking to one planner dispatch per phase gate.
 
 All 11 named agents carry `disallowedTools: ..., Agent`, so a `trip:<role>` worker structurally
 cannot dispatch sub-workers. A child orchestrator is therefore not one of those named agents. It
@@ -93,8 +124,26 @@ same completion tag its `codex-bridge` counterpart uses, so tag-parsing logic in
 skills is harness-agnostic. This replaced dispatching every role as the built-in `general-purpose`
 agent, which worked but flattened Claude Code's usage/analytics view into one undifferentiated
 bucket. An older cached `trip` install without these files yet fails a `trip:<role>` dispatch with
-an "Unknown agent" error — `agent-routing.md`'s upgrade note documents the recovery (retry that
-one call with `general-purpose`, then update and reload).
+an "Unknown agent" error — `agent-routing.md` documents the recovery (retry that one call with
+`general-purpose`, then update and reload).
+
+On the `subagent` harness, a dispatch with no `model` falls back to the agent file's `model:`
+frontmatter. If that is missing too, it falls back to the orchestrator's own model, which is
+silent and usually the most expensive tier. The routing contract therefore passes a row's model
+on every dispatch and leaves a row blank only when the agent file's default is acceptable. The
+profile's Effort column reaches a native subagent only through a pinned agent file carrying
+`effort:`, routed with the `subagent:<agent-name>` harness value (1.8.0), because the Agent tool
+has no effort field.
+
+Since 1.8.0 every step that requires "no unreported work" uses one defined **clean-tree check**,
+which excludes `codex-bridge`'s `.codex-bridge/` state folder:
+- the phase commit;
+- the integration-fix commit after the code-review loop, which captures gate and review fixes
+  made after the last phase merge;
+- the release commit.
+
+Removing `git add -A` made these checks necessary, because `-A` had been the only thing sweeping
+post-merge fixes into the release.
 
 ## The profile: `docs/TRIP.md`
 
@@ -129,8 +178,20 @@ because the resolution rewrites reviewed, gate-verified content. The artifact-wr
 `release-worker` dispatches, with one `release-verifier` over the combined diff — see
 [[worktree-parallelism]].
 
+Since 1.8.0 release ground truth is `origin`. Step 1 fetches once (the verifier re-fetches), and
+every release dispatch measures the change as `origin/<main>...HEAD`, and every figure written into an artifact cites the command that produced
+it. Stale local `main` had produced false release claims that the verifier then confirmed. The
+release commit goes through `workspace-worker` with explicit paths, which is consistent with the
+git-index rule. The pre-PR "ready to open the pull request?" question is gone, because the pull
+request is itself the user's review point. Release artifact names use `w<WEEK>_v<X.Y.Z>`; the
+older `wa_vx.y.z` spelling leaked a literal `wa_` prefix into released file names, and a literal
+placeholder is now a verifier finding.
+
 ## Codex is stateless
 
 Every `codex-bridge` worker `trip` dispatches is a fresh process with no memory between turns —
 continuity travels only through `--notes`. This is defined once in `agent-routing.md`'s
 Codex-bridge section rather than re-derived in each phase skill. See [[codex-bridge-plugin]].
+Native subagents are stateless between dispatches too, so since 1.8.0 `TRIP-2-implement` states
+its batch loop in harness-neutral terms, with the `codex-bridge` invocation forms alongside, rather
+than in Codex terms that a native-harness orchestrator had to translate.
